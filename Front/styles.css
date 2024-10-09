@@ -1,0 +1,88 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    height: 100vh;
+}
+
+.container {
+    display: flex;
+    width: 100%;
+}
+
+.sidebar {
+    background-color: #0a3d62;
+    padding: 15px;
+    width: 125px;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar button {
+    margin-bottom: 10px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.editor-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.tabs {
+    background-color: #84817a;
+    padding: 5px;
+    display: flex;
+}
+
+.tabs .tab {
+    padding: 10px;
+    cursor: pointer;
+    background-color: #ecf0f1;
+    margin-right: 5px;
+    border-radius: 5px;
+}
+
+.tabs .tab.active {
+    background-color: #5ff75f9d;
+    border-bottom: 2px solid #000000;
+}
+
+.editor {
+    flex-grow: 1;
+    padding: 10px;
+    background-color: #84817a;
+}
+
+.editor textarea {
+    width: 100%;
+    height: 100%;
+    font-family: monospace;
+    font-size: 14px;
+    padding: 10px;
+    box-sizing: border-box;
+    border: 1px solid #dddddd;
+    border-radius: 5px;
+}
+
+.consola {
+    padding: 10px;
+    background-color: #84817a;
+    color: #fff;
+}
+
+.consola textarea {
+    width: 100%;
+    height: 250px;
+    background-color:#333;
+    color: #fff;
+    border: none;
+    font-family: monospace;
+    resize: none;
+}
+
+.tabla-reporte {
+    display: none;
+}
