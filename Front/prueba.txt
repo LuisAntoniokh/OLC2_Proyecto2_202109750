@@ -1,0 +1,39 @@
+// Additions
+System.out.println("Add");
+System.out.println(10 + 5);  // Expected output: 15
+System.out.println(20 + 4);  // Expected output: 24
+System.out.println(15 + 10); // Expected output: 25
+System.out.println(30 + 25); // Expected output: 55
+System.out.println(50 + 20); // Expected output: 70
+
+// Subtractions
+System.out.println("Res");
+System.out.println(10 - 5);  // Expected output: 5
+System.out.println(20 - 4);  // Expected output: 16
+System.out.println(15 - 10); // Expected output: 5
+System.out.println(30 - 25); // Expected output: 5
+System.out.println(50 - 20); // Expected output: 30
+
+// Multiplications
+System.out.println("Mlt");
+System.out.println(2 * 3);   // Expected output: 6
+System.out.println(4 * 5);   // Expected output: 20
+System.out.println(6 * 7);   // Expected output: 42
+System.out.println(8 * 9);   // Expected output: 72
+System.out.println(10 * 11); // Expected output: 110
+
+// Divisions
+System.out.println("Div");
+System.out.println(20 / 4);  // Expected output: 5
+System.out.println(30 / 5);  // Expected output: 6
+System.out.println(40 / 8);  // Expected output: 5
+System.out.println(50 / 10); // Expected output: 5
+System.out.println(60 / 12); // Expected output: 5
+
+// Modulos
+System.out.println("Mod");
+System.out.println(10 % 3);  // Expected output: 1
+System.out.println(20 % 4);  // Expected output: 0
+System.out.println(15 % 6);  // Expected output: 3
+System.out.println(30 % 7);  // Expected output: 2
+System.out.println(50 % 8);  // Expected output: 2

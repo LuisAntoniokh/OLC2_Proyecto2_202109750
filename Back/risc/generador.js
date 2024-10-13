@@ -1,4 +1,5 @@
 import { registers as reg } from "./constantes.js";
+import { stringTo32BitsArray as conv } from "./utils.js";
 
 class Instruction {
 
@@ -22,6 +23,7 @@ class Instruction {
 export class Generador {
     constructor() {
         this.instrucciones = []
+        this.objectStack=[]
     }
 
     add(rd, rs1, rs2) {
@@ -40,20 +42,24 @@ export class Generador {
         this.instrucciones.push(new Instruction('div', rd, rs1, rs2))
     }
 
-    addi(rd, rs1, inmediato) {
-        this.instrucciones.push(new Instruction('addi', rd, rs1, inmediato))
+    mod(rd, rs1, rs2) {
+        this.instrucciones.push(new Instruction('rem', rd, rs1, rs2))
     }
 
-    sw(rs1, rs2, inmediato = 0) {
-        this.instrucciones.push(new Instruction('sw', rs1, `${inmediato}(${rs2})`))
+    addi(rd, rs1, inm) {
+        this.instrucciones.push(new Instruction('addi', rd, rs1, inm))
     }
 
-    lw(rd, rs1, inmediato = 0) {
-        this.instrucciones.push(new Instruction('lw', rd, `${inmediato}(${rs1})`))
+    sw(rs1, rs2, inm = 0) {
+        this.instrucciones.push(new Instruction('sw', rs1, `${inm}(${rs2})`))
     }
 
-    li(rd, inmediato) {
-        this.instrucciones.push(new Instruction('li', rd, inmediato))
+    lw(rd, rs1, inm = 0) {
+        this.instrucciones.push(new Instruction('lw', rd, `${inm}(${rs1})`))
+    }
+
+    li(rd, inm) {
+        this.instrucciones.push(new Instruction('li', rd, inm))
     }
 
     push(rd = reg.T0) {
@@ -95,12 +101,70 @@ export class Generador {
         this.instrucciones.push(new Instruction(`# ${text}`))
     }
 
-    toString() {
-        return `
-.text
-main:
-    ${this.instrucciones.map(instruccion => `${instruccion}`).join('\n')}
-`
+    printString(rd = reg.A0) {
+        if (rd !== reg.A0) {
+            this.push(reg.A0)
+            this.add(reg.A0, rd, reg.ZERO)
+        }
+
+        this.li(reg.A7, 4)
+        this.ecall()
+
+        if (rd !== reg.A0) {
+            this.pop(reg.A0)
+        }
     }
 
+    pushContant(object) {
+        let length = 0;
+        switch (object.tipo) {
+            case 'int':
+                this.li(reg.T0, object.valor);
+                this.push()
+                length = 4;
+                break;
+
+            case 'string':
+                const strArray = conv(object.valor).reverse();
+                strArray.forEach((block32bits) => {
+                    this.li(reg.T0, block32bits);
+                    this.push(reg.T0);
+                });
+                length = strArray.length * 4;
+                break;
+
+            default:
+                break;
+        }
+
+        this.pushObject({ tipo: object.tipo, length });
+    }
+
+    pushObject(object) {
+        this.objectStack.push(object);
+    }
+
+    popObject(rd = reg.T0) {
+        const object = this.objectStack.pop();
+        switch (object.tipo) {
+            case 'int':
+                this.pop(rd);
+                break;
+
+            case 'string':
+                this.addi(rd, reg.SP, 0);
+                this.addi(reg.SP, reg.SP, object.length);
+            default:
+                break;
+        }
+
+        return object;
+    }
+
+    toString() {
+        this.endProgram();
+        return `.text
+main:
+    ${this.instrucciones.map(instruccion => `${instruccion}`).join('\n')}
+` }
 }
