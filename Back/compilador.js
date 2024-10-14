@@ -31,12 +31,59 @@ export class CompilerVisitor extends BaseVisitor {
      */
     visitOperacionBinaria(node) {
         this.code.comment(`Operacion: ${node.op}`)
+
+        if(node.op === '&&'){
+            node.izq.accept(this);
+            this.code.popObject(reg.T0);
+            const lbfalse = this.code.getLabel();
+            const fin = this.code.getLabel();
+
+            this.code.beq(reg.T0, reg.ZERO, lbfalse);
+            node.der.accept(this);
+            this.code.popObject(reg.T0);
+            this.code.beq(reg.T0, reg.ZERO, lbfalse);
+
+            this.code.li(reg.T0, 1);
+            this.code.push(reg.T0);
+            this.code.j(fin);
+            this.code.addLabel(lbfalse);
+            this.code.li(reg.T0, 0);
+            this.code.push(reg.T0);
+
+            this.code.addLabel(fin);
+            this.code.pushObject({ tipo: 'boolean', length: 4 });
+            return
+        }
+
+        if (node.op === '||') {
+            node.izq.accept(this);
+            this.code.popObject(reg.T0);
+            const labelTrue = this.code.getLabel();
+            const labelEnd = this.code.getLabel();
+
+            this.code.bne(reg.T0, reg.ZERO, labelTrue);
+            node.der.accept(this);
+            this.code.popObject(reg.T0);
+            this.code.bne(reg.T0, reg.ZERO, labelTrue);
+
+            this.code.li(reg.T0, 0);
+            this.code.push(reg.T0);
+            this.code.j(labelEnd);
+            this.code.addLabel(labelTrue);
+            this.code.li(reg.T0, 1);
+            this.code.push(reg.T0);
+
+            this.code.addLabel(labelEnd);
+            this.code.pushObject({ tipo: 'boolean', length: 4 });
+            return
+        }
+
         node.izq.accept(this);
         node.der.accept(this);
 
-        const isDerFloat = this.code.getTopObject() === 'float';
+        const isDerFloat = this.code.getTopObject().tipo === 'float';
         const der = this.code.popObject(isDerFloat ? flt.FT0 : reg.T0); // der
-        const isIzqFloat = this.code.getTopObject() === 'float';
+        const isIzqFloat = this.code.getTopObject().tipo === 'float';
         const izq = this.code.popObject(isIzqFloat ? flt.FT1 : reg.T1); // izq
 
         if (izq.tipo === 'string' && der.tipo === 'string') {
@@ -101,11 +148,6 @@ export class CompilerVisitor extends BaseVisitor {
 
             case '<=':
                 this.code.callBuiltin('lessOrEqual');
-                this.code.pushObject({ tipo: 'boolean', length: 4 });
-                return
-
-            case '&&':
-                this.code.callBuiltin('logicalAnd');
                 this.code.pushObject({ tipo: 'boolean', length: 4 });
                 return
         }
@@ -207,7 +249,7 @@ export class CompilerVisitor extends BaseVisitor {
     visitIf(node) {
         node.cond.accept(this);
         this.code.popObject(reg.T0);
-        const hasElse = !!node.stmtFalse;
+        const hasElse = !!node.iffalse;
 
         if (hasElse) {
             const elseLabel = this.code.getLabel();

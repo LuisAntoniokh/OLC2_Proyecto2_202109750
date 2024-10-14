@@ -50,27 +50,7 @@ export const lessOrEqual = (code) => {
     code.addLabel(endLabel)
 }
 
-/**
- * 
- * @param {Generador} code 
- */
-export const logicalAnd = (code) => {
-    const labelFalse = code.getLabel();
-    const labelEnd = code.getLabel();
-    code.beq(reg.T0, reg.ZERO, labelFalse); // if (!izq) goto labelFalse
-    code.popObject(reg.T0); // der
-    code.beq(reg.T0, reg.ZERO, labelFalse); // if (!der) goto labelFalse
-    code.li(reg.T0, 1);
-    code.push(reg.T0);
-    code.j(labelEnd);
-    code.addLabel(labelFalse);
-    code.li(reg.T0, 0);
-    code.push(reg.T0);
-    code.addLabel(labelEnd);
-}
-
 export const builtins = {
     concatString,
-    lessOrEqual,
-    logicalAnd
+    lessOrEqual
 }
