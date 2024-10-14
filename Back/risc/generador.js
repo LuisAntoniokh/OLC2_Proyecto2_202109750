@@ -1,5 +1,6 @@
 import { registers as reg } from "./constantes.js";
-import { stringTo32BitsArray as conv } from "./utils.js";
+import { stringTo1ByteArray, numberToF32 } from "./utils.js";
+import { builtins } from "./builtins.js";
 
 class Instruction {
 
@@ -24,22 +25,41 @@ export class Generador {
     constructor() {
         this.instrucciones = []
         this.objectStack=[]
+        this.depth = 0
+        this._usedBuiltins = new Set()
+        this._labelCounter = 0;
     }
 
     add(rd, rs1, rs2) {
         this.instrucciones.push(new Instruction('add', rd, rs1, rs2))
     }
 
+    fadd(rd, rs1, rs2) {
+        this.instrucciones.push(new Instruction('fadd.s', rd, rs1, rs2))
+    }
+
     sub(rd, rs1, rs2) {
         this.instrucciones.push(new Instruction('sub', rd, rs1, rs2))
+    }
+
+    fsub(rd, rs1, rs2) {
+        this.instrucciones.push(new Instruction('fsub.s', rd, rs1, rs2))
     }
 
     mul(rd, rs1, rs2) {
         this.instrucciones.push(new Instruction('mul', rd, rs1, rs2))
     }
 
+    fmul(rd, rs1, rs2) {
+        this.instrucciones.push(new Instruction('fmul.s', rd, rs1, rs2))
+    }
+
     div(rd, rs1, rs2) {
         this.instrucciones.push(new Instruction('div', rd, rs1, rs2))
+    }
+
+    fdiv(rd, rs1, rs2) {
+        this.instrucciones.push(new Instruction('fdiv.s', rd, rs1, rs2))
     }
 
     mod(rd, rs1, rs2) {
@@ -54,17 +74,46 @@ export class Generador {
         this.instrucciones.push(new Instruction('sw', rs1, `${inm}(${rs2})`))
     }
 
+    sb(rs1, rs2, inmediato = 0) {
+        this.instrucciones.push(new Instruction('sb', rs1, `${inmediato}(${rs2})`))
+    }
+
     lw(rd, rs1, inm = 0) {
         this.instrucciones.push(new Instruction('lw', rd, `${inm}(${rs1})`))
+    }
+
+    flw(rd, rs1, inmediato = 0) {
+        this.instrucciones.push(new Instruction('flw', rd, `${inmediato}(${rs1})`))
     }
 
     li(rd, inm) {
         this.instrucciones.push(new Instruction('li', rd, inm))
     }
 
+    fli(rd, inmediato) {
+        this.instrucciones.push(new Instruction('fli.s', rd, inmediato))
+    }
+
+    fmv(rd, rs1) {
+        this.instrucciones.push(new Instruction('fmv.s', rd, rs1))
+    }
+
+    lb(rd, rs1, inmediato = 0) {
+        this.instrucciones.push(new Instruction('lb', rd, `${inmediato}(${rs1})`))
+    }
+
+    fcvtsw(rd, rs1) {
+        this.instrucciones.push(new Instruction('fcvt.s.w', rd, rs1))
+    }
+
     push(rd = reg.T0) {
         this.addi(reg.SP, reg.SP, -4) // 4 bytes = 32 bits
         this.sw(rd, reg.SP)
+    }
+
+    pushFloat(rd = reg.FT0) {
+        this.addi(reg.SP, reg.SP, -4) // 4 bytes = 32 bits
+        this.fsw(rd, reg.SP)
     }
 
     pop(rd = reg.T0) {
@@ -92,6 +141,11 @@ export class Generador {
 
     }
 
+    printFloat() {
+        this.li(reg.A7, 2)
+        this.ecall()
+    }
+
     endProgram() {
         this.li(reg.A7, 10)
         this.ecall()
@@ -115,7 +169,7 @@ export class Generador {
         }
     }
 
-    pushContant(object) {
+    pushConstant(object) {
         let length = 0;
         switch (object.tipo) {
             case 'int':
@@ -125,23 +179,44 @@ export class Generador {
                 break;
 
             case 'string':
-                const strArray = conv(object.valor).reverse();
-                strArray.forEach((block32bits) => {
-                    this.li(reg.T0, block32bits);
-                    this.push(reg.T0);
+                const stringArray = stringTo1ByteArray(object.valor);
+                this.comment(`Pushing string ${object.valor}`);
+                this.push(reg.HP);
+                stringArray.forEach((charCode) => {
+                    this.li(reg.T0, charCode);
+                    this.sb(reg.T0, reg.HP);
+                    this.addi(reg.HP, reg.HP, 1);
                 });
-                length = strArray.length * 4;
+                length = 4;
+                break;
+
+            case 'boolean':
+                this.li(reg.T0, object.valor ? 1 : 0);
+                this.push(reg.T0);
+                length = 4;
+                break;
+
+            case 'float':
+                const ieee754 = numberToF32(object.valor);
+                this.li(reg.T0, ieee754);
+                this.push(reg.T0);
+                length = 4;
                 break;
 
             default:
                 break;
         }
 
-        this.pushObject({ tipo: object.tipo, length });
+        this.pushObject({ tipo: object.tipo, length, depth: this.depth });
     }
 
     pushObject(object) {
         this.objectStack.push(object);
+    }
+
+    popFloat(rd = reg.FT0) {
+        this.flw(rd, reg.SP)
+        this.addi(reg.SP, reg.SP, 4)
     }
 
     popObject(rd = reg.T0) {
@@ -152,8 +227,17 @@ export class Generador {
                 break;
 
             case 'string':
-                this.addi(rd, reg.SP, 0);
-                this.addi(reg.SP, reg.SP, object.length);
+                this.pop(rd);
+                break;
+
+            case 'boolean':
+                this.pop(rd);
+                break;
+
+            case 'float':
+                this.popFloat(rd);
+                break;
+
             default:
                 break;
         }
@@ -161,10 +245,118 @@ export class Generador {
         return object;
     }
 
+    getLabel() {
+        return `L${this._labelCounter++}`
+    }
+
+    addLabel(label) {
+        label = label || this.getLabel()
+        this.instrucciones.push(new Instruction(`${label}:`))
+        return label
+    }
+
+    // Condicionales
+
+    // ==
+    beq(rs1, rs2, label) {
+        this.instrucciones.push(new Instruction('beq', rs1, rs2, label))
+    }
+
+    // !=
+    bne(rs1, rs2, label) {
+        this.instrucciones.push(new Instruction('bne', rs1, rs2, label))
+    }
+    
+    // <
+    blt(rs1, rs2, label) {
+        this.instrucciones.push(new Instruction('blt', rs1, rs2, label))
+    }
+
+    // >=
+    bge(rs1, rs2, label) {
+        this.instrucciones.push(new Instruction('bge', rs1, rs2, label))
+    }
+
+    jal(label) {
+        this.instrucciones.push(new Instruction('jal', label))
+    }
+
+    j(label) {
+        this.instrucciones.push(new Instruction('j', label))
+    }
+
+    ret() {
+        this.instrucciones.push(new Instruction('ret'))
+    }
+
+    callBuiltin(builtinName) {
+        if (!builtins[builtinName]) {
+            throw new Error(`Builtin ${builtinName} not found`)
+        }
+        this._usedBuiltins.add(builtinName)
+        this.jal(builtinName)
+    }
+
+    // Entornos 
+    
+    getTopObject() {
+        return this.objectStack[this.objectStack.length - 1];
+    }
+
+    newScope() {
+        this.depth++
+    }
+
+    endScope() {
+        let byteOffset = 0;
+
+        for (let i = this.objectStack.length - 1; i >= 0; i--) {
+            if (this.objectStack[i].depth === this.depth) {
+                byteOffset += this.objectStack[i].length;
+                this.objectStack.pop();
+            } else {
+                break;
+            }
+        }
+        this.depth--
+
+        return byteOffset;
+    }
+
+    tagObject(id) {
+        this.objectStack[this.objectStack.length - 1].id = id;
+    }
+
+    getObject(id) {
+        let byteOffset = 0;
+        for (let i = this.objectStack.length - 1; i >= 0; i--) {
+            if (this.objectStack[i].id === id) {
+                return [byteOffset, this.objectStack[i]];
+            }
+            byteOffset += this.objectStack[i].length;
+        }
+
+        throw new Error(`Variable ${id} not found`);
+    }
+
     toString() {
-        this.endProgram();
-        return `.text
+        this.comment('Fin del programa')
+        this.endProgram()
+        this.comment('Builtins')
+        Array.from(this._usedBuiltins).forEach(builtinName => {
+            this.addLabel(builtinName)
+            builtins[builtinName](this)
+            this.ret()
+        })
+
+        return `
+.data
+        heap:
+.text
+
+# inicializando el heap pointer
+    la ${reg.HP}, heap
+
 main:
     ${this.instrucciones.map(instruccion => `${instruccion}`).join('\n')}
-` }
-}
+` } }
