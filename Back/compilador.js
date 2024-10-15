@@ -199,8 +199,11 @@ export class CompilerVisitor extends BaseVisitor {
             'int': () => this.code.printInt(),
             'string': () => this.code.printString(),
             'float': () => this.code.printFloat(),
+            'boolean': () => this.code.printBoolean(),
+            'char': () => this.code.printChar()
         }
         tipoPrint[object.tipo]();
+        this.code.printNewLine(); 
     }
 
     /**

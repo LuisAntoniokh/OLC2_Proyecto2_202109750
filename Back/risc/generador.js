@@ -177,6 +177,25 @@ export class Generador {
         }
     }
 
+    printBool(rd = reg.A0) {
+        this.li(reg.A7, 4)
+        this.ecall()
+    }
+
+    printChar(rd = reg.A0) {
+        if (rd !== reg.A0) {
+            this.push(reg.A0)
+            this.add(reg.A0, rd, reg.ZERO)
+        }
+    
+        this.li(reg.A7, 11) // Syscall para imprimir un carácter
+        this.ecall()
+    
+        if (rd !== reg.A0) {
+            this.pop(reg.A0)
+        }
+    }
+
     pushConstant(object) {
         let length = 0;
         switch (object.tipo) {
@@ -345,6 +364,12 @@ export class Generador {
         }
 
         throw new Error(`Variable ${id} not found`);
+    }
+
+    printNewLine() {
+        this.li(reg.A0, 10);
+        this.li(reg.A7, 11);
+        this.ecall();
     }
 
     toString() {
