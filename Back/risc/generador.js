@@ -1,4 +1,4 @@
-import { registers as reg } from "./constantes.js";
+import { registers as reg, floatRegisters as flt } from "./constantes.js";
 import { stringTo1ByteArray, numberToF32 } from "./utils.js";
 import { builtins } from "./builtins.js";
 
@@ -177,25 +177,6 @@ export class Generador {
         }
     }
 
-    printBool(rd = reg.A0) {
-        this.li(reg.A7, 4)
-        this.ecall()
-    }
-
-    printChar(rd = reg.A0) {
-        if (rd !== reg.A0) {
-            this.push(reg.A0)
-            this.add(reg.A0, rd, reg.ZERO)
-        }
-    
-        this.li(reg.A7, 11) // Syscall para imprimir un carácter
-        this.ecall()
-    
-        if (rd !== reg.A0) {
-            this.pop(reg.A0)
-        }
-    }
-
     pushConstant(object) {
         let length = 0;
         switch (object.tipo) {
@@ -224,8 +205,16 @@ export class Generador {
                 break;
 
             case 'float':
+                this.comment(`Pushing string ${object.valor}`);
                 const ieee754 = numberToF32(object.valor);
                 this.li(reg.T0, ieee754);
+                this.push(reg.T0);
+                length = 4;
+                break;
+
+            case 'char':
+                this.comment(`Pushing char ${object.valor}`);
+                this.li(reg.T0, object.valor.charCodeAt(0));
                 this.push(reg.T0);
                 length = 4;
                 break;
@@ -263,6 +252,10 @@ export class Generador {
 
             case 'float':
                 this.popFloat(rd);
+                break;
+
+            case 'char':
+                this.pop(rd);
                 break;
 
             default:
@@ -369,6 +362,11 @@ export class Generador {
     printNewLine() {
         this.li(reg.A0, 10);
         this.li(reg.A7, 11);
+        this.ecall();
+    }
+
+    printChar(rd = reg.A0) {
+        this.li(reg.A7, 11); // Syscall for print char
         this.ecall();
     }
 

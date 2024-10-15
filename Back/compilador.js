@@ -199,8 +199,7 @@ export class CompilerVisitor extends BaseVisitor {
             'int': () => this.code.printInt(),
             'string': () => this.code.printString(),
             'float': () => this.code.printFloat(),
-            'boolean': () => this.code.printBoolean(),
-            'char': () => this.code.printChar()
+            'char': () => this.code.printChar(),
         }
         tipoPrint[object.tipo]();
         this.code.printNewLine(); 
@@ -219,6 +218,14 @@ export class CompilerVisitor extends BaseVisitor {
      */
     visitAsignacion(node){
         node.asgn.accept(this);
+        const isFloat = this.code.getTopObject().tipo === 'float';
+        if(isFloat){
+            this.code.popObject(flt.FT0);
+            this.code.pushFloat(flt.FT0);
+            this.code.flw(flt.FT0, reg.SP);
+            this.code.addi(reg.SP, reg.SP, 4);
+            return;
+        }
         const valueObject = this.code.popObject(reg.T0);
         const [offset, variableObject] = this.code.getObject(node.id);
         this.code.addi(reg.T1, reg.SP, offset);
