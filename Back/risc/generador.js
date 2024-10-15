@@ -74,6 +74,10 @@ export class Generador {
         this.instrucciones.push(new Instruction('sw', rs1, `${inm}(${rs2})`))
     }
 
+    fsw(rs1, rs2, inmediato = 0) {
+        this.instrucciones.push(new Instruction('fsw', rs1, `${inmediato}(${rs2})`))
+    }
+
     sb(rs1, rs2, inmediato = 0) {
         this.instrucciones.push(new Instruction('sb', rs1, `${inmediato}(${rs2})`))
     }
@@ -96,6 +100,10 @@ export class Generador {
 
     fmv(rd, rs1) {
         this.instrucciones.push(new Instruction('fmv.s', rd, rs1))
+    }
+
+    fmvwx(valPF, valEnt) {
+        this.instrucciones.push(new Instruction('fmv.w.x', valPF, valEnt))
     }
 
     lb(rd, rs1, inmediato = 0) {

@@ -159,11 +159,18 @@ export class CompilerVisitor extends BaseVisitor {
      */
     visitOperacionUnaria(node) {
         node.exp.accept(this);
+        const isFloat = this.code.getTopObject().tipo === 'float';
+        const unico = this.code.popObject(isFloat ? flt.FT0 : reg.T0);
 
-        this.code.popObject(reg.T0);
-
-        // Agregar para el float
-
+        if (isFloat) {
+            this.code.li(reg.T1, 0);
+            this.code.fmvwx(flt.FT1, reg.T1);
+            this.code.fsub(flt.FT0, flt.FT1, flt.FT0);
+            this.code.pushFloat(flt.FT0);
+            this.code.pushObject({length: 4, tipo: 'float' });
+            return;
+        }
+            
         switch (node.op) {
             case '-':
                 this.code.li(reg.T1, 0);
@@ -172,7 +179,6 @@ export class CompilerVisitor extends BaseVisitor {
                 this.code.pushObject({length: 4, tipo: 'int' });
                 break;
         }
-
     }
 
     /**
