@@ -87,11 +87,14 @@ export class CompilerVisitor extends BaseVisitor {
         const izq = this.code.popObject(isIzqFloat ? flt.FT1 : reg.T1); // izq
 
         if (izq.tipo === 'string' && der.tipo === 'string') {
-            this.code.add(reg.A0, reg.ZERO, reg.T1);
-            this.code.add(reg.A1, reg.ZERO, reg.T0);
-            this.code.callBuiltin('concatString');
-            this.code.pushObject({ tipo: 'string', length: 4 });
-            return;
+            switch (node.op) {
+                case '+':
+                    this.code.add(reg.A0, reg.ZERO, reg.T1);
+                    this.code.add(reg.A1, reg.ZERO, reg.T0);
+                    this.code.callBuiltin('concatString');
+                    this.code.pushObject({ tipo: 'string', length: 4 });
+                    return;
+            }
         }
 
         if (isIzqFloat || isDerFloat) {
@@ -114,6 +117,21 @@ export class CompilerVisitor extends BaseVisitor {
                 case '/':
                     this.code.fdiv(flt.FT0, flt.FT1, flt.FT0);
                     break;
+                
+                case '==':
+                    const trueLabel = this.code.getLabel();
+                    const endLabel = this.code.getLabel();
+                    this.code.feqs(reg.T0, flt.FT0, flt.FT1); // feq.s t0, ft0, ft1
+                    this.code.bnez(reg.T0, trueLabel);
+                    this.code.li(reg.T0, 0);
+                    this.code.push(reg.T0);
+                    this.code.j(endLabel);
+                    this.code.addLabel(trueLabel);
+                    this.code.li(reg.T0, 1);
+                    this.code.push(reg.T0);
+                    this.code.addLabel(endLabel);
+                    this.code.pushObject({ tipo: 'boolean', length: 4 });
+                    return;
             }
             this.code.pushFloat(flt.FT0);
             this.code.pushObject({ tipo: 'float', length: 4 });
@@ -148,6 +166,11 @@ export class CompilerVisitor extends BaseVisitor {
 
             case '<=':
                 this.code.callBuiltin('lessOrEqual');
+                this.code.pushObject({ tipo: 'boolean', length: 4 });
+                return
+            
+            case '==':
+                this.code.callBuiltin('equals');
                 this.code.pushObject({ tipo: 'boolean', length: 4 });
                 return
         }

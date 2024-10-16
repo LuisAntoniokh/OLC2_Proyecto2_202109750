@@ -27,7 +27,8 @@ export class Generador {
         this.objectStack=[]
         this.depth = 0
         this._usedBuiltins = new Set()
-        this._labelCounter = 0;
+        this._labelCounter = 0
+        this.code = [];
     }
 
     add(rd, rs1, rs2) {
@@ -280,6 +281,14 @@ export class Generador {
     // ==
     beq(rs1, rs2, label) {
         this.instrucciones.push(new Instruction('beq', rs1, rs2, label))
+    }
+
+    feqs(rd, rs1, rs2) {
+        this.instrucciones.push(new Instruction('feq.s', rd, rs1, rs2))
+    }
+
+    bnez(rs1, label) {
+        this.instrucciones.push(new Instruction('bnez', rs1, label))
     }
 
     // !=

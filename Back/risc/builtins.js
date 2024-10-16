@@ -50,7 +50,25 @@ export const lessOrEqual = (code) => {
     code.addLabel(endLabel)
 }
 
+/**
+ * 
+ * @param {Generador} code 
+ */
+export const equals = (code) => {
+    const trueLabel = code.getLabel();
+    const endLabel = code.getLabel();
+    code.beq(reg.T0, reg.T1, trueLabel); // der == izq
+    code.li(reg.T0, 0);
+    code.push(reg.T0);
+    code.j(endLabel);
+    code.addLabel(trueLabel);
+    code.li(reg.T0, 1);
+    code.push(reg.T0);
+    code.addLabel(endLabel);
+}
+
 export const builtins = {
     concatString,
-    lessOrEqual
+    lessOrEqual,
+    equals
 }
