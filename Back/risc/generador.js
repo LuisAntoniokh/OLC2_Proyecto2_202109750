@@ -370,6 +370,37 @@ export class Generador {
         this.ecall();
     }
 
+    printBoolean(rd = reg.A0) {
+        const verdadero = this.getLabel();
+        const fin = this.getLabel();
+    
+        // Si es falso imprime "false" caracter por caracter concatenado.
+        this.bne(rd, reg.ZERO, verdadero);
+        this.li(reg.A0, 'f'.charCodeAt(0));
+        this.printChar();
+        this.li(reg.A0, 'a'.charCodeAt(0));
+        this.printChar();
+        this.li(reg.A0, 'l'.charCodeAt(0));
+        this.printChar();
+        this.li(reg.A0, 's'.charCodeAt(0));
+        this.printChar();
+        this.li(reg.A0, 'e'.charCodeAt(0));
+        this.printChar();
+        this.j(fin);
+    
+        // Si es verdadero imprime "true" caracter por caracter concatenado.
+        this.addLabel(verdadero);
+        this.li(reg.A0, 't'.charCodeAt(0));
+        this.printChar();
+        this.li(reg.A0, 'r'.charCodeAt(0));
+        this.printChar();
+        this.li(reg.A0, 'u'.charCodeAt(0));
+        this.printChar();
+        this.li(reg.A0, 'e'.charCodeAt(0));
+        this.printChar();
+        this.addLabel(fin);
+    }
+
     toString() {
         this.comment('Fin del programa')
         this.endProgram()
