@@ -228,7 +228,11 @@ export class Generador {
     }
 
     pushObject(object) {
-        this.objectStack.push(object);
+        // this.objectStack.push(object);
+        this.objectStack.push({
+            ... object,
+            depth: this.depth
+        });
     }
 
     popFloat(rd = reg.FT0) {
@@ -382,32 +386,28 @@ export class Generador {
     printBoolean(rd = reg.A0) {
         const verdadero = this.getLabel();
         const fin = this.getLabel();
-    
-        // Si es falso imprime "false" caracter por caracter concatenado.
+        
+        // Si es verdadero imprime "true"
         this.bne(rd, reg.ZERO, verdadero);
-        this.li(reg.A0, 'f'.charCodeAt(0));
-        this.printChar();
-        this.li(reg.A0, 'a'.charCodeAt(0));
-        this.printChar();
-        this.li(reg.A0, 'l'.charCodeAt(0));
-        this.printChar();
-        this.li(reg.A0, 's'.charCodeAt(0));
-        this.printChar();
-        this.li(reg.A0, 'e'.charCodeAt(0));
-        this.printChar();
+        this.la(reg.A0, 'false');
+        this.printString();
         this.j(fin);
-    
-        // Si es verdadero imprime "true" caracter por caracter concatenado.
+        
+        // Si es falso imprime "false"
         this.addLabel(verdadero);
-        this.li(reg.A0, 't'.charCodeAt(0));
-        this.printChar();
-        this.li(reg.A0, 'r'.charCodeAt(0));
-        this.printChar();
-        this.li(reg.A0, 'u'.charCodeAt(0));
-        this.printChar();
-        this.li(reg.A0, 'e'.charCodeAt(0));
-        this.printChar();
+        this.la(reg.A0, 'true');
+        this.printString();
+        
         this.addLabel(fin);
+    }
+
+    printNull() {
+        this.la(reg.A0, 'null');
+        this.printString();
+    }
+
+    la(rd, label) {
+        this.instrucciones.push(new Instruction('la', rd, label))
     }
 
     toString() {
@@ -422,6 +422,10 @@ export class Generador {
 
         return `
 .data
+null: .string "null"
+true: .string "true"
+false: .string "false"
+
         heap:
 .text
 
