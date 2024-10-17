@@ -94,6 +94,12 @@ export class CompilerVisitor extends BaseVisitor {
                     this.code.callBuiltin('concatString');
                     this.code.pushObject({ tipo: 'string', length: 4 });
                     return;
+                case '==':
+                    this.code.add(reg.A0, reg.ZERO, reg.T1);
+                    this.code.add(reg.A1, reg.ZERO, reg.T0);
+                    this.code.callBuiltin('equalsString');
+                    this.code.pushObject({ tipo: 'boolean', length: 4 });
+                    return;
             }
         }
 
@@ -244,10 +250,15 @@ export class CompilerVisitor extends BaseVisitor {
         node.asgn.accept(this);
         const isFloat = this.code.getTopObject().tipo === 'float';
         if(isFloat){
-            this.code.popObject(flt.FT0);
+            const valueObject = this.code.popObject(flt.FT0);
+            const [offset, variableObject] = this.code.getObject(node.id);
+            this.code.addi(reg.T1, reg.SP, offset);
+            this.code.fsw(flt.FT0, reg.T1);
+            variableObject.tipo = valueObject.tipo;
             this.code.pushFloat(flt.FT0);
-            this.code.flw(flt.FT0, reg.SP);
-            this.code.addi(reg.SP, reg.SP, 4);
+            this.code.comment(`Asignacion de ${node.id} con ${node.asgn}`);
+            this.code.flw(flt.FT0, reg.SP) // flw t0, 0(sp)
+            this.code.addi(reg.SP, reg.SP, 4) //addi sp, sp, 4
             return;
         }
         const valueObject = this.code.popObject(reg.T0);
