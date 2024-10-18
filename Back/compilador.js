@@ -226,6 +226,25 @@ export class CompilerVisitor extends BaseVisitor {
      * @type {BaseVisitor['visitOperacionUnaria']}
      */
     visitOperacionUnaria(node) {
+        if(node.op === '!'){
+            node.exp.accept(this);
+            this.code.popObject(reg.T0);
+            const lbfalse = this.code.getLabel();
+            const fin = this.code.getLabel();
+
+            this.code.beq(reg.T0, reg.ZERO, lbfalse);
+            this.code.li(reg.T0, 0);
+            this.code.push(reg.T0);
+            this.code.j(fin);
+            this.code.addLabel(lbfalse);
+            this.code.li(reg.T0, 1);
+            this.code.push(reg.T0);
+
+            this.code.addLabel(fin);
+            this.code.pushObject({ tipo: 'boolean', length: 4 });
+            return
+        }
+        
         node.exp.accept(this);
         const isFloat = this.code.getTopObject().tipo === 'float';
         const unico = this.code.popObject(isFloat ? flt.FT0 : reg.T0);
