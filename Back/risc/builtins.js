@@ -70,6 +70,23 @@ export const equals = (code) => {
 /**
  * @param {Generador} code
  */
+export const notEquals = (code) => {
+    const trueLabel = code.getLabel();
+    const endLabel = code.getLabel();
+    code.bne(reg.T0, reg.T1, trueLabel); // der != izq
+    code.li(reg.T0, 0);
+    code.push(reg.T0);
+    code.j(endLabel);
+    code.addLabel(trueLabel);
+    code.li(reg.T0, 1);
+    code.push(reg.T0);
+    code.addLabel(endLabel);
+};
+
+
+/**
+ * @param {Generador} code
+ */
 export const equalsString = (code) => {
     const trueLabel = code.getLabel();
     const falseLabel = code.getLabel();
@@ -77,20 +94,46 @@ export const equalsString = (code) => {
     const loopLabel = code.getLabel();
 
     code.addLabel(loopLabel);
-    code.lb(reg.T2, reg.T0); // Load byte from first string
-    code.lb(reg.T3, reg.T1); // Load byte from second string
-    code.bne(reg.T2, reg.T3, falseLabel); // If bytes are not equal, jump to falseLabel
-    code.beq(reg.T2, reg.ZERO, trueLabel); // If end of string, jump to trueLabel
-    code.addi(reg.T0, reg.T0, 1); // Increment pointer for first string
-    code.addi(reg.T1, reg.T1, 1); // Increment pointer for second string
-    code.j(loopLabel); // Repeat loop
+    code.lb(reg.T2, reg.T0); 
+    code.lb(reg.T3, reg.T1); 
+    code.bne(reg.T2, reg.T3, falseLabel);
+    code.beq(reg.T2, reg.ZERO, trueLabel); 
+    code.addi(reg.T0, reg.T0, 1); 
+    code.addi(reg.T1, reg.T1, 1); 
+    code.j(loopLabel);
 
     code.addLabel(trueLabel);
-    code.li(reg.T0, 1); // Strings are equal
+    code.li(reg.T0, 1); 
     code.j(endLabel);
 
     code.addLabel(falseLabel);
-    code.li(reg.T0, 0); // Strings are not equal
+    code.li(reg.T0, 0); 
+
+    code.addLabel(endLabel);
+    code.push(reg.T0);
+};
+
+export const notEqualsString = (code) => {
+    const trueLabel = code.getLabel();
+    const falseLabel = code.getLabel();
+    const endLabel = code.getLabel();
+    const loopLabel = code.getLabel();
+
+    code.addLabel(loopLabel);
+    code.lb(reg.T2, reg.T0); 
+    code.lb(reg.T3, reg.T1); 
+    code.bne(reg.T2, reg.T3, trueLabel); 
+    code.beq(reg.T2, reg.ZERO, falseLabel); 
+    code.addi(reg.T0, reg.T0, 1);
+    code.addi(reg.T1, reg.T1, 1); 
+    code.j(loopLabel); 
+
+    code.addLabel(trueLabel);
+    code.li(reg.T0, 1); 
+    code.j(endLabel);
+
+    code.addLabel(falseLabel);
+    code.li(reg.T0, 0); 
 
     code.addLabel(endLabel);
     code.push(reg.T0);
@@ -100,5 +143,7 @@ export const builtins = {
     concatString,
     lessOrEqual,
     equals,
-    equalsString
+    equalsString,
+    notEquals,
+    notEqualsString
 }

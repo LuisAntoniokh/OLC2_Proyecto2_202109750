@@ -287,6 +287,10 @@ export class Generador {
         this.instrucciones.push(new Instruction('beq', rs1, rs2, label))
     }
 
+    beqz(rs1, label) {
+        this.instrucciones.push(new Instruction('beqz', rs1, label));
+    }
+    
     feqs(rd, rs1, rs2) {
         this.instrucciones.push(new Instruction('feq.s', rd, rs1, rs2))
     }

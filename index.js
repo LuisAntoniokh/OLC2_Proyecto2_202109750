@@ -96,6 +96,7 @@ function seleccionarTab(tab) {
 
 function analizador() {
     const codigoFuente = editor.value;
+    consolaOutput.innerHTML = '';
     // errCount = 0;
     //tablaErrores.innerHTML = '';
     //tablaSimbolos.innerHTML = '';

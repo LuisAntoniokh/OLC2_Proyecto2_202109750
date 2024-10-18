@@ -87,17 +87,24 @@ export class CompilerVisitor extends BaseVisitor {
         const izq = this.code.popObject(isIzqFloat ? flt.FT1 : reg.T1); // izq
 
         if (izq.tipo === 'string' && der.tipo === 'string') {
+            this.code.add(reg.A0, reg.ZERO, reg.T1);
+            this.code.add(reg.A1, reg.ZERO, reg.T0);
+
             switch (node.op) {
                 case '+':
-                    this.code.add(reg.A0, reg.ZERO, reg.T1);
-                    this.code.add(reg.A1, reg.ZERO, reg.T0);
+                    // this.code.add(reg.A0, reg.ZERO, reg.T1);
+                    // this.code.add(reg.A1, reg.ZERO, reg.T0);
                     this.code.callBuiltin('concatString');
                     this.code.pushObject({ tipo: 'string', length: 4 });
                     return;
                 case '==':
-                    this.code.add(reg.A0, reg.ZERO, reg.T1);
-                    this.code.add(reg.A1, reg.ZERO, reg.T0);
+                    // this.code.add(reg.A0, reg.ZERO, reg.T1);
+                    // this.code.add(reg.A1, reg.ZERO, reg.T0);
                     this.code.callBuiltin('equalsString');
+                    this.code.pushObject({ tipo: 'boolean', length: 4 });
+                    return;
+                case '!=':
+                    this.code.callBuiltin('notEqualsString');
                     this.code.pushObject({ tipo: 'boolean', length: 4 });
                     return;
             }
@@ -138,6 +145,21 @@ export class CompilerVisitor extends BaseVisitor {
                     this.code.addLabel(endLabel);
                     this.code.pushObject({ tipo: 'boolean', length: 4 });
                     return;
+
+                case '!=':
+                    const verdadero = this.code.getLabel();
+                    const fin = this.code.getLabel();
+                    this.code.feqs(reg.T0, flt.FT0, flt.FT1); // feq.s t0, ft0, ft1
+                    this.code.beqz(reg.T0, verdadero);
+                    this.code.li(reg.T0, 0);
+                    this.code.push(reg.T0);
+                    this.code.j(fin);
+                    this.code.addLabel(verdadero);
+                    this.code.li(reg.T0, 1);
+                    this.code.push(reg.T0);
+                    this.code.addLabel(fin);
+                    this.code.pushObject({ tipo: 'boolean', length: 4 });
+                    return
             }
             this.code.pushFloat(flt.FT0);
             this.code.pushObject({ tipo: 'float', length: 4 });
@@ -177,6 +199,11 @@ export class CompilerVisitor extends BaseVisitor {
             
             case '==':
                 this.code.callBuiltin('equals');
+                this.code.pushObject({ tipo: 'boolean', length: 4 });
+                return
+            
+            case '!=':
+                this.code.callBuiltin('notEquals');
                 this.code.pushObject({ tipo: 'boolean', length: 4 });
                 return
         }
