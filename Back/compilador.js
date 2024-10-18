@@ -279,7 +279,7 @@ export class CompilerVisitor extends BaseVisitor {
      * @type {BaseVisitor['visitPrint']}
      */
     visitPrint(node) {
-        node.exp.forEach(exp => {
+        node.exp.forEach((exp, index) => {
             exp.accept(this);
             const isFloat = this.code.getTopObject().tipo === 'float';
             const object = this.code.popObject(isFloat ? flt.FA0 : reg.A0);
@@ -292,9 +292,11 @@ export class CompilerVisitor extends BaseVisitor {
                 'null': () => this.code.printNull()
             }
             tipoPrint[object.tipo]();
-            this.code.li(reg.A0, 32);
-            this.code.li(reg.A7, 11); 
-            this.code.ecall();
+            if (index < node.exp.length - 1) {
+                this.code.li(reg.A0, 32);
+                this.code.li(reg.A7, 11); 
+                this.code.ecall();
+            }
         });
         this.code.printNewLine(); 
     }
