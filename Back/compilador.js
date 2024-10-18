@@ -128,32 +128,12 @@ export class CompilerVisitor extends BaseVisitor {
                     break;
                 
                 case '==':
-                    const trueLabel = this.code.getLabel();
-                    const endLabel = this.code.getLabel();
-                    this.code.feqs(reg.T0, flt.FT0, flt.FT1); // feq.s t0, ft0, ft1
-                    this.code.bnez(reg.T0, trueLabel);
-                    this.code.li(reg.T0, 0);
-                    this.code.push(reg.T0);
-                    this.code.j(endLabel);
-                    this.code.addLabel(trueLabel);
-                    this.code.li(reg.T0, 1);
-                    this.code.push(reg.T0);
-                    this.code.addLabel(endLabel);
+                    this.code.callBuiltin('equalsFloat');
                     this.code.pushObject({ tipo: 'boolean', length: 4 });
                     return;
 
                 case '!=':
-                    const verdadero = this.code.getLabel();
-                    const fin = this.code.getLabel();
-                    this.code.feqs(reg.T0, flt.FT0, flt.FT1); // feq.s t0, ft0, ft1
-                    this.code.beqz(reg.T0, verdadero);
-                    this.code.li(reg.T0, 0);
-                    this.code.push(reg.T0);
-                    this.code.j(fin);
-                    this.code.addLabel(verdadero);
-                    this.code.li(reg.T0, 1);
-                    this.code.push(reg.T0);
-                    this.code.addLabel(fin);
+                    this.code.callBuiltin('notEqualsFloat');
                     this.code.pushObject({ tipo: 'boolean', length: 4 });
                     return
                 

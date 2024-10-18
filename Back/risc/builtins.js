@@ -130,6 +130,39 @@ export const notEquals = (code) => {
     code.addLabel(endLabel);
 };
 
+/**
+ * @param {Generador} code
+ */
+export const equalsFloat = (code) => {
+    const trueLabel = code.getLabel();
+    const endLabel = code.getLabel();
+    code.feqs(reg.T0, flt.FT0, flt.FT1); // feq.s t0, ft0, ft1
+    code.bnez(reg.T0, trueLabel);
+    code.li(reg.T0, 0);
+    code.push(reg.T0);
+    code.j(endLabel);
+    code.addLabel(trueLabel);
+    code.li(reg.T0, 1);
+    code.push(reg.T0);
+    code.addLabel(endLabel);
+};
+
+/**
+ * @param {Generador} code
+ */
+export const notEqualsFloat = (code) => {
+    const trueLabel = code.getLabel();
+    const endLabel = code.getLabel();
+    code.feqs(reg.T0, flt.FT0, flt.FT1); // feq.s t0, ft0, ft1
+    code.beqz(reg.T0, trueLabel);
+    code.li(reg.T0, 0);
+    code.push(reg.T0);
+    code.j(endLabel);
+    code.addLabel(trueLabel);
+    code.li(reg.T0, 1);
+    code.push(reg.T0);
+    code.addLabel(endLabel);
+};
 
 /**
  * @param {Generador} code
@@ -195,5 +228,7 @@ export const builtins = {
     notEqualsString,
     higherOrEqual,
     lessOrEqualFloat,
-    higherOrEqualFloat
+    higherOrEqualFloat,
+    equalsFloat,
+    notEqualsFloat
 }
