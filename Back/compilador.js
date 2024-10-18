@@ -305,8 +305,12 @@ export class CompilerVisitor extends BaseVisitor {
      * @type {BaseVisitor['visitDeclaracionVariable']}
      */
     visitDeclaracionVariable(node){
-        node.exp.accept(this);
-        this.code.tagObject(node.id);
+        if(node.exp){
+            node.exp.accept(this);
+        } else {
+            this.code.pushConstant({valor: "null", tipo: 'null'});
+        }
+            this.code.tagObject(node.id);
     }
 
     /**
