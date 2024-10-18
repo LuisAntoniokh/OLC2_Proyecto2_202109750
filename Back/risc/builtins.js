@@ -32,6 +32,40 @@ export const concatString = (code) => {
     code.addi(reg.HP, reg.HP, 1)
 }
 
+/**
+ * 
+ * @param {Generador} code 
+ */
+export const less = (code) => {
+    const trueLabel = code.getLabel()
+    const endLabel = code.getLabel()
+    code.blt(reg.T1, reg.T0, trueLabel) // der < izq
+    code.li(reg.T0, 0)
+    code.push(reg.T0)
+    code.j(endLabel)
+    code.addLabel(trueLabel)
+    code.li(reg.T0, 1)
+    code.push(reg.T0)
+    code.addLabel(endLabel)
+}
+
+/**
+ * 
+ * @param {Generador} code 
+ */
+export const lessFloat = (code) => {
+    const trueLabel = code.getLabel();
+    const endLabel = code.getLabel();
+    code.flts(reg.T0, flt.FT1, flt.FT0); // flt.s t0, ft0, ft1
+    code.bnez(reg.T0, trueLabel);
+    code.li(reg.T0, 0);
+    code.push(reg.T0);
+    code.j(endLabel);
+    code.addLabel(trueLabel);
+    code.li(reg.T0, 1);
+    code.push(reg.T0);
+    code.addLabel(endLabel);
+}
 
 /**
  * 
@@ -63,6 +97,43 @@ export const lessOrEqualFloat = (code) => {
     code.push(reg.T0);
     code.addLabel(endLabel);
 };
+
+
+/**
+ * 
+ * @param {Generador} code 
+ */
+export const higher = (code) => {
+    const trueLabel = code.getLabel()
+    const endLabel = code.getLabel()
+    code.bgt(reg.T1, reg.T0, trueLabel) // izq > der
+    code.li(reg.T0, 0)
+    code.push(reg.T0)
+    code.j(endLabel)
+    code.addLabel(trueLabel)
+    code.li(reg.T0, 1)
+    code.push(reg.T0)
+    code.addLabel(endLabel)
+}
+
+/**
+ * 
+ * @param {Generador} code 
+ */
+export const higherFloat = (code) => {
+    const trueLabel = code.getLabel();
+    const endLabel = code.getLabel();
+    code.flts(reg.T0, flt.FT0, flt.FT1); // flt.s t0, ft0, ft1
+    code.bnez(reg.T0, trueLabel);
+    code.li(reg.T0, 0);
+    code.push(reg.T0);
+    code.j(endLabel);
+    code.addLabel(trueLabel);
+    code.li(reg.T0, 1);
+    code.push(reg.T0);
+    code.addLabel(endLabel);
+}
+
 
 /**
  * 
@@ -230,5 +301,9 @@ export const builtins = {
     lessOrEqualFloat,
     higherOrEqualFloat,
     equalsFloat,
-    notEqualsFloat
+    notEqualsFloat,
+    less,
+    higher,
+    lessFloat,
+    higherFloat
 }

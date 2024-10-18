@@ -147,6 +147,16 @@ export class CompilerVisitor extends BaseVisitor {
                     this.code.pushObject({ tipo: 'boolean', length: 4 });
                     return;
 
+                case '<':
+                    this.code.callBuiltin('lessFloat');
+                    this.code.pushObject({ tipo: 'boolean', length: 4 });
+                    return;
+                
+                case '>':
+                    this.code.callBuiltin('higherFloat');
+                    this.code.pushObject({ tipo: 'boolean', length: 4 });
+                    return;
+
             }
             this.code.pushFloat(flt.FT0);
             this.code.pushObject({ tipo: 'float', length: 4 });
@@ -196,6 +206,16 @@ export class CompilerVisitor extends BaseVisitor {
 
             case '>=':
                 this.code.callBuiltin('higherOrEqual');
+                this.code.pushObject({ tipo: 'boolean', length: 4 });
+                return
+
+            case '<':
+                this.code.callBuiltin('less');
+                this.code.pushObject({ tipo: 'boolean', length: 4 });
+                return
+            
+            case '>':
+                this.code.callBuiltin('higher');
                 this.code.pushObject({ tipo: 'boolean', length: 4 });
                 return
         }

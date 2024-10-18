@@ -314,8 +314,17 @@ export class Generador {
         this.instrucciones.push(new Instruction('bge', rs1, rs2, label))
     }
 
+    // >
+    bgt(rs1, rs2, label) {
+        this.instrucciones.push(new Instruction('bgt', rs1, rs2, label))
+    }
+
     fles(rd, rs1, rs2) {
         this.instrucciones.push(new Instruction('fle.s', rd, rs1, rs2))
+    }
+
+    flts(rd, rs1, rs2) {
+        this.instrucciones.push(new Instruction('flt.s', rd, rs1, rs2))
     }
 
     jal(label) {
