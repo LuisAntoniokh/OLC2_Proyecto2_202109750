@@ -188,8 +188,8 @@ export class Generador {
                 break;
 
             case 'string':
-                const stringArray = stringTo1ByteArray(object.valor);
-                this.comment(`Pushing string ${object.valor}`);
+                const stringArray = stringTo1ByteArray(object.valor.replace("\,", "").replace("\\", ""));
+                this.comment(`Pushing string ${object.valor.replace("\,", "").replace("\\", "")}`);
                 this.push(reg.HP);
                 stringArray.forEach((charCode) => {
                     this.li(reg.T0, charCode);

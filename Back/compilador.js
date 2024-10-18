@@ -279,18 +279,23 @@ export class CompilerVisitor extends BaseVisitor {
      * @type {BaseVisitor['visitPrint']}
      */
     visitPrint(node) {
-        node.exp.accept(this);
-        const isFloat = this.code.getTopObject().tipo === 'float';
-        const object = this.code.popObject(isFloat ? flt.FA0 : reg.A0);
-        const tipoPrint = {
-            'int': () => this.code.printInt(),
-            'string': () => this.code.printString(),
-            'float': () => this.code.printFloat(),
-            'char': () => this.code.printChar(),
-            'boolean': () => this.code.printBoolean(),
-            'null': () => this.code.printNull()
-        }
-        tipoPrint[object.tipo]();
+        node.exp.forEach(exp => {
+            exp.accept(this);
+            const isFloat = this.code.getTopObject().tipo === 'float';
+            const object = this.code.popObject(isFloat ? flt.FA0 : reg.A0);
+            const tipoPrint = {
+                'int': () => this.code.printInt(),
+                'string': () => this.code.printString(),
+                'float': () => this.code.printFloat(),
+                'char': () => this.code.printChar(),
+                'boolean': () => this.code.printBoolean(),
+                'null': () => this.code.printNull()
+            }
+            tipoPrint[object.tipo]();
+            this.code.li(reg.A0, 32);
+            this.code.li(reg.A7, 11); 
+            this.code.ecall();
+        });
         this.code.printNewLine(); 
     }
 

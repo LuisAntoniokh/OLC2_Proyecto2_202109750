@@ -71,7 +71,7 @@ FuncTipoDato = td:"int" { return td }
         / td:"char" { return td }
         / td:"void" { return td }
 
-StmtnDlc = "System.out.println(" _ exp:Expresion _ ")" _ ";" { return crearNodo('print', { exp }) }
+StmtnDlc = "System.out.println(" _ exp:ListaExp _ ")" _ ";" { return crearNodo('print', { exp }) }
     / block:Bloque { return block }
     / stContr:StmtControl { return stContr }
     / stCicle:StmtCiclos { return stCicle }
