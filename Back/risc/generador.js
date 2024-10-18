@@ -290,7 +290,7 @@ export class Generador {
     beqz(rs1, label) {
         this.instrucciones.push(new Instruction('beqz', rs1, label));
     }
-    
+
     feqs(rd, rs1, rs2) {
         this.instrucciones.push(new Instruction('feq.s', rd, rs1, rs2))
     }
@@ -312,6 +312,10 @@ export class Generador {
     // >=
     bge(rs1, rs2, label) {
         this.instrucciones.push(new Instruction('bge', rs1, rs2, label))
+    }
+
+    fles(rd, rs1, rs2) {
+        this.instrucciones.push(new Instruction('fle.s', rd, rs1, rs2))
     }
 
     jal(label) {

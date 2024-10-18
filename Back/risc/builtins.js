@@ -1,4 +1,4 @@
-import { registers as reg } from "./constantes.js"
+import { registers as reg, floatRegisters as flt} from "./constantes.js"
 import { Generador } from "./generador.js"
 
 /**
@@ -49,6 +49,53 @@ export const lessOrEqual = (code) => {
     code.push(reg.T0)
     code.addLabel(endLabel)
 }
+
+export const lessOrEqualFloat = (code) => {
+    const trueLabel = code.getLabel();
+    const endLabel = code.getLabel();
+    code.fles(reg.T0, flt.FT1, flt.FT0); // fle.s t0, ft1, ft0
+    code.bnez(reg.T0, trueLabel);
+    code.li(reg.T0, 0);
+    code.push(reg.T0);
+    code.j(endLabel);
+    code.addLabel(trueLabel);
+    code.li(reg.T0, 1);
+    code.push(reg.T0);
+    code.addLabel(endLabel);
+};
+
+/**
+ * 
+ * @param {Generador} code 
+ */
+export const higherOrEqual = (code) => {
+    const trueLabel = code.getLabel()
+    const endLabel = code.getLabel()
+    code.bge(reg.T1, reg.T0, trueLabel) // izq >= der 
+    code.li(reg.T0, 0)
+    code.push(reg.T0)
+    code.j(endLabel)
+    code.addLabel(trueLabel)
+    code.li(reg.T0, 1)
+    code.push(reg.T0)
+    code.addLabel(endLabel)
+}
+
+
+export const higherOrEqualFloat = (code) => {
+    const trueLabel = code.getLabel();
+    const endLabel = code.getLabel();
+    code.fles(reg.T0, flt.FT0, flt.FT1); // fle.s t0, ft0, ft1
+    code.bnez(reg.T0, trueLabel);
+    code.li(reg.T0, 0);
+    code.push(reg.T0);
+    code.j(endLabel);
+    code.addLabel(trueLabel);
+    code.li(reg.T0, 1);
+    code.push(reg.T0);
+    code.addLabel(endLabel);
+    code.pushObject({ tipo: 'boolean', length: 4 });
+};
 
 /**
  * 
@@ -145,5 +192,8 @@ export const builtins = {
     equals,
     equalsString,
     notEquals,
-    notEqualsString
+    notEqualsString,
+    higherOrEqual,
+    lessOrEqualFloat,
+    higherOrEqualFloat
 }

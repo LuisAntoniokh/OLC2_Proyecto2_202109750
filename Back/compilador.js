@@ -92,14 +92,10 @@ export class CompilerVisitor extends BaseVisitor {
 
             switch (node.op) {
                 case '+':
-                    // this.code.add(reg.A0, reg.ZERO, reg.T1);
-                    // this.code.add(reg.A1, reg.ZERO, reg.T0);
                     this.code.callBuiltin('concatString');
                     this.code.pushObject({ tipo: 'string', length: 4 });
                     return;
                 case '==':
-                    // this.code.add(reg.A0, reg.ZERO, reg.T1);
-                    // this.code.add(reg.A1, reg.ZERO, reg.T0);
                     this.code.callBuiltin('equalsString');
                     this.code.pushObject({ tipo: 'boolean', length: 4 });
                     return;
@@ -160,6 +156,17 @@ export class CompilerVisitor extends BaseVisitor {
                     this.code.addLabel(fin);
                     this.code.pushObject({ tipo: 'boolean', length: 4 });
                     return
+                
+                case '<=':
+                    this.code.callBuiltin('lessOrEqualFloat');
+                    this.code.pushObject({ tipo: 'boolean', length: 4 });
+                    return;
+                
+                case '>=':
+                    this.code.callBuiltin('higherOrEqualFloat');
+                    this.code.pushObject({ tipo: 'boolean', length: 4 });
+                    return;
+
             }
             this.code.pushFloat(flt.FT0);
             this.code.pushObject({ tipo: 'float', length: 4 });
@@ -204,6 +211,11 @@ export class CompilerVisitor extends BaseVisitor {
             
             case '!=':
                 this.code.callBuiltin('notEquals');
+                this.code.pushObject({ tipo: 'boolean', length: 4 });
+                return
+
+            case '>=':
+                this.code.callBuiltin('higherOrEqual');
                 this.code.pushObject({ tipo: 'boolean', length: 4 });
                 return
         }
