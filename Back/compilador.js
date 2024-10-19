@@ -458,4 +458,42 @@ export class CompilerVisitor extends BaseVisitor {
         this.code.j(this.continueLabel);
     }
 
+    /**
+     * @type {BaseVisitor['visitSwitch']}
+     */
+    visitSwitch(node) {
+        const endLabel = this.code.getLabel();
+        const defaultLabel = node.defo ? this.code.getLabel() : endLabel;
+        const caseLabels = node.cases.map(() => this.code.getLabel());
+        const hayBreak = this.breakLabel;
+        this.breakLabel = endLabel;
+        node.exp.accept(this);
+        this.code.popObject(reg.T0);
+
+        // Generar las comparaciones para cada case
+        node.cases.forEach((caseNode, index) => {
+            this.code.li(reg.T1, caseNode.exp.valor);
+            this.code.beq(reg.T0, reg.T1, caseLabels[index]);
+        });
+
+        // Si hay un default, saltar a él
+        if (node.defo) {
+            this.code.j(defaultLabel);
+        }
+
+        // Generar el código para cada case
+        node.cases.forEach((caseNode, index) => {
+            this.code.addLabel(caseLabels[index]);
+            caseNode.stmts.forEach(stmt => stmt.accept(this));
+        });
+
+        // Generar el código para el default
+        if (node.defo) {
+            this.code.addLabel(defaultLabel);
+            node.defo.stmts.forEach(stmt => stmt.accept(this));
+        }
+
+        this.code.addLabel(endLabel);
+        this.breakLabel = hayBreak;
+    }
 }
