@@ -196,6 +196,7 @@ export class Generador {
                     this.sb(reg.T0, reg.HP);
                     this.addi(reg.HP, reg.HP, 1);
                 });
+                this.addi(reg.HP, reg.HP, (4 - (stringArray.length % 4)) % 4);
                 length = 4;
                 break;
 
@@ -331,6 +332,10 @@ export class Generador {
         this.instrucciones.push(new Instruction('jal', label))
     }
 
+    jalr(rd, rs1, imm) {
+        this.instrucciones.push(new Instruction('jalr', rd, rs1, imm))
+    }
+
     j(label) {
         this.instrucciones.push(new Instruction('j', label))
     }
@@ -425,6 +430,15 @@ export class Generador {
 
     la(rd, label) {
         this.instrucciones.push(new Instruction('la', rd, label))
+    }
+
+    getFrameLocal(index) {
+        const frameRelativeLocal = this.objectStack.filter(obj => obj.type === 'local');
+        return frameRelativeLocal[index];
+    }
+    
+    slli(rd, rs1, shamt) {
+        this.instrucciones.push(new Instruction('slli', rd, rs1, shamt))
     }
 
     toString() {

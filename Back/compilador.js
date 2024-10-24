@@ -496,4 +496,131 @@ export class CompilerVisitor extends BaseVisitor {
         this.code.addLabel(endLabel);
         this.breakLabel = hayBreak;
     }
+
+    /**
+     * @type {BaseVisitor['visitDeclaracionArreglo']}
+     */
+    visitDeclaracionArreglo(node) {
+        const tipo = node.tipo;
+        const id = node.id;
+        const lista = node.lista;
+
+        this.code.comment(`Declaración de arreglo ${id} de tipo ${tipo}`);
+        this.code.push(reg.HP); // Dirección base del arreglo
+
+        lista.forEach((exp, index) => {
+            exp.accept(this);
+            const valueObject = this.code.popObject(reg.T0);
+            this.code.sw(reg.T0, reg.HP, index * 4); // Almacenar el valor en la posición correspondiente
+        });
+
+        this.code.addi(reg.HP, reg.HP, lista.length * 4); // Avanzar el puntero del heap
+        this.code.pushObject({ tipo: node.tipo, length: lista.length, id }); // Empujar el objeto a la pila
+        this.code.tagObject(id); // Etiquetar el objeto
+    }
+
+    /**
+     * @type {BaseVisitor['visitDeclaracionArregloTam']}
+     */
+    visitDeclaracionArregloTam(node) {
+        const tipo = node.tipo;
+        const id = node.id;
+        const tam = node.tam;
+    
+        this.code.comment(`Declaración de arreglo ${id} de tipo ${tipo} con tamaño ${tam}`);
+        tam.accept(this);
+        const tamObject = this.code.popObject(reg.T0);
+        this.code.push(reg.HP); // Dirección base del arreglo
+    
+        for (let i = 0; i < tamObject.valor; i++) {
+            switch (tipo) {
+                case 'int':
+                    this.code.li(reg.T0, 0);
+                    break;
+                case 'float':
+                    this.code.li(reg.T0, 0);
+                    break;
+                case 'string':
+                    this.code.li(reg.T0, 0);
+                    break;
+                case 'boolean':
+                    this.code.li(reg.T0, 0);
+                    break;
+                case 'char':
+                    this.code.li(reg.T0, 0);
+                    break;
+            }
+            this.code.sw(reg.T0, reg.HP, i * 4); // Almacenar el valor por defecto en la posición correspondiente
+        }
+    
+        this.code.comment(`O en el addi final?`);
+        this.code.addi(reg.HP, reg.HP, tam.valor * 4); // Avanzar el puntero del heap
+        this.code.pushObject({ tipo: node.tipo, length: tamObject.valor, id }); // Empujar el objeto a la pila
+        this.code.tagObject(id);
+    }
+
+    /**
+     * @type {BaseVisitor['visitDeclaracionArregloCopia']}
+     */
+    visitDeclaracionArregloCopia(node) {
+        const tipo = node.tipo;
+        const id = node.id;
+        const id2 = node.id2;
+
+        this.code.comment(`Declaración de arreglo ${id} como copia de ${id2}`);
+        const [offset, variableObject] = this.code.getObject(id2);
+
+        this.code.push(reg.HP); // Dirección base del nuevo arreglo
+
+        for (let i = 0; i < variableObject.length; i++) {
+            this.code.lw(reg.T0, reg.SP, offset + i * 4);
+            this.code.sw(reg.T0, reg.HP, i * 4); // Copiar el valor en la posición correspondiente
+        }
+
+        this.code.addi(reg.HP, reg.HP, variableObject.length * 4); // Avanzar el puntero del heap
+        this.code.pushObject({ tipo: node.tipo, length: variableObject.length, id }); // Empujar el objeto a la pila
+        this.code.tagObject(id); // Etiquetar el objeto
+    }
+
+    /**
+     * @type {BaseVisitor['visitAccesoArreglo']}
+     */
+    visitAccesoArreglo(node) {
+        const id = node.id;
+        const indice = node.indice;
+    
+        this.code.comment(`Acceso al arreglo ${id} en la posición ${indice.valor}`);
+        indice.accept(this);
+        const indiceObject = this.code.popObject(reg.T0);
+    
+        const [offset, variableObject] = this.code.getObject(id);
+        this.code.lw(reg.T1, reg.SP, offset); // Cargar la dirección base del arreglo
+        this.code.slli(reg.T0, reg.T0, 2); // Multiplicar el índice por 4 para obtener la dirección correcta
+        this.code.add(reg.T1, reg.T1, reg.T0);
+        this.code.lw(reg.T0, reg.T1);
+        this.code.push(reg.T0);
+        this.code.pushObject({ tipo: variableObject.tipo, length: 4 });
+    }
+
+    /**
+     * @type {BaseVisitor['visitAsignacionArreglo']}
+     */
+    visitAsignacionArreglo(node) {
+        const id = node.id;
+        const indice = node.indice;
+        const valor = node.valor.accept(this);
+    
+        this.code.comment(`Asignación en el arreglo ${id} en la posición ${indice.valor}`);
+        indice.accept(this);
+        const indiceObject = this.code.popObject(reg.T0);
+        const valorObject = this.code.popObject(reg.T1);
+    
+        const [offset, variableObject] = this.code.getObject(id);
+        this.code.lw(reg.T2, reg.SP, offset); // Cargar la dirección base del arreglo
+        this.code.slli(reg.T0, reg.T0, 2); // Multiplicar el índice por 4 para obtener la dirección correcta
+        this.code.add(reg.T2, reg.T2, reg.T0);
+        this.code.sw(reg.T1, reg.T2);
+        this.code.push(reg.T1);
+        this.code.pushObject(valorObject);
+    }
 }

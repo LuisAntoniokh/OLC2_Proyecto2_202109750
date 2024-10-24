@@ -305,5 +305,6 @@ export const builtins = {
     less,
     higher,
     lessFloat,
-    higherFloat
+    higherFloat,
+    parseInt
 }
