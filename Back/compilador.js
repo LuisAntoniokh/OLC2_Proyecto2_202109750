@@ -1,7 +1,8 @@
 import { registers as reg, floatRegisters as flt } from "./risc/constantes.js";
 import { Generador } from "./risc/generador.js";
 import { BaseVisitor } from "./patron/visitor.js";
-
+import { FrameVisitor } from "./funciones/frame.js";
+import { ReferenciaVariable } from "./patron/nodos.js";
 
 export class CompilerVisitor extends BaseVisitor {
     constructor() {
@@ -9,6 +10,10 @@ export class CompilerVisitor extends BaseVisitor {
         this.code = new Generador();
         this.continueLabel = null;
         this.breakLabel = null;
+        this.functionMetada = {}
+        this.insideFunction = false;
+        this.frameDclIndex = 0;
+        this.returnLabel = null;
     }
 
     /**
@@ -292,11 +297,11 @@ export class CompilerVisitor extends BaseVisitor {
                 'null': () => this.code.printNull()
             }
             tipoPrint[object.tipo]();
-            if (index < node.exp.length - 1) {
+            /*if (index < node.exp.length - 1) {
                 this.code.li(reg.A0, 32);
                 this.code.li(reg.A7, 11); 
                 this.code.ecall();
-            }
+            }*/
         });
         this.code.printNewLine(); 
     }
@@ -307,6 +312,19 @@ export class CompilerVisitor extends BaseVisitor {
     visitDeclaracionVariable(node){
         if(node.exp){
             node.exp.accept(this);
+            if (this.insideFunction) {
+                const localObject = this.code.getFrameLocal(this.frameDclIndex);
+                const valueObj = this.code.popObject(reg.T0);
+    
+                this.code.addi(reg.T1, reg.FP, -localObject.offset * 4);
+                this.code.sw(reg.T0, reg.T1);
+    
+                // ! inferir el tipo
+                localObject.type = valueObj.type;
+                this.frameDclIndex++;
+    
+                return
+            }
         } else {
             this.code.pushConstant({valor: "null", tipo: 'null'});
         }
@@ -322,6 +340,11 @@ export class CompilerVisitor extends BaseVisitor {
         if(isFloat){
             const valueObject = this.code.popObject(flt.FT0);
             const [offset, variableObject] = this.code.getObject(node.id);
+            if (this.insideFunction) {
+                this.code.addi(reg.T1, reg.FP, -variableObject.offset * 4);
+                this.code.fsw(flt.FT0, reg.T1);
+                return
+            }
             this.code.addi(reg.T1, reg.SP, offset);
             this.code.fsw(flt.FT0, reg.T1);
             variableObject.tipo = valueObject.tipo;
@@ -333,6 +356,11 @@ export class CompilerVisitor extends BaseVisitor {
         }
         const valueObject = this.code.popObject(reg.T0);
         const [offset, variableObject] = this.code.getObject(node.id);
+        if (this.insideFunction) {
+            this.code.addi(reg.T1, reg.FP, -variableObject.offset * 4);
+            this.code.sw(reg.T0, reg.T1);
+            return
+        }
         this.code.addi(reg.T1, reg.SP, offset);
         this.code.sw(reg.T0, reg.T1);
         variableObject.tipo = valueObject.tipo;
@@ -345,6 +373,13 @@ export class CompilerVisitor extends BaseVisitor {
      */
     visitReferenciaVariable(node) {
         const [offset, variableObject] = this.code.getObject(node.id);
+        if (this.insideFunction) {
+            this.code.addi(reg.T1, reg.FP, -variableObject.offset * 4);
+            this.code.lw(reg.T0, reg.T1);
+            this.code.push(reg.T0);
+            this.code.pushObject({ ...variableObject, id: undefined });
+            return
+        }
         this.code.addi(reg.T0, reg.SP, offset);
         this.code.lw(reg.T1, reg.T0);
         this.code.push(reg.T1);
@@ -622,5 +657,138 @@ export class CompilerVisitor extends BaseVisitor {
         this.code.sw(reg.T1, reg.T2);
         this.code.push(reg.T1);
         this.code.pushObject(valorObject);
+    }
+
+    /**
+     * @type {BaseVisitor['visitFuncDcl']}
+     */
+    visitFuncDcl(node) {
+        const baseSize=2;
+        const paramSize = node.params.length;
+        const frameVisitor = new FrameVisitor(baseSize+paramSize);
+        node.block.accept(frameVisitor);
+        const localFrame = frameVisitor.frame;
+        const localSize = localFrame.length;
+        const returnSize = 1;
+        const totalSize = baseSize + paramSize + localSize + returnSize;
+
+        this.functionMetada[node.id] = {
+            frameSize: totalSize,
+            returnType: node.td,
+        };
+
+        const instruccionesDeMain = this.code.instrucciones;
+        const instruccionesDeDeclaracionDeFuncion = [];
+        this.code.instrucciones = instruccionesDeDeclaracionDeFuncion;
+
+        node.params.forEach((param, index)=> {
+            this.code.pushObject({
+                id: param.id,
+                tipo: param.tipo, //Quizas es td
+                length: 4,
+                offset: baseSize + index
+            })});
+        
+        localFrame.forEach(variableLocal => {
+            this.code.pushObject({
+                ...variableLocal,
+                length: 4,
+                tipo: 'local',
+            })});
+        
+        this.insideFunction = node.id;
+        this.frameDclIndex = 0;
+        this.returnLabel = this.code.getLabel();
+        this.code.addLabel(node.id);
+        node.block.accept(this);
+        this.code.addLabel(this.returnLabel);
+        this.code.add(reg.T0, reg.ZERO, reg.FP);
+        this.code.lw(reg.RA, reg.T0);
+        this.code.jalr(reg.ZERO, reg.RA, 0);
+        
+        for (let i = 0; i < paramSize+localSize; i++) {
+            this.code.objectStack.pop();
+        }
+
+        this.code.instrucciones = instruccionesDeMain;
+        instruccionesDeDeclaracionDeFuncion.forEach(instruccion => {
+            this.code.instrucionesDeFunciones.push(instruccion);
+        });
+
+        this.insideFunction = false;
+    }
+
+    /**
+     * @type {BaseVisitor['visitLlamada']}
+     */
+    visitLlamada(node){
+        if (!(node.callee instanceof ReferenciaVariable)) return
+        const nombreFuncion = node.callee.id;
+
+        const embebidas = {
+            parseInt: () => {
+                node.args[0].accept(this);
+                this.code.popObject(reg.A0);
+                this.code.callBuiltin('parseInt');
+                this.code.pushObject({ tipo: 'int', length: 4 });
+            },
+            parseFloat: () => {
+                node.args[0].accept(this);
+                this.code.popObject(reg.FA0);
+                this.code.callBuiltin('parseFloat');
+                this.code.pushObject({ tipo: 'float', length: 4 });
+            },
+        }
+        if (embebidas[nombreFuncion]) {
+            embebidas[nombreFuncion]();
+            return
+        }
+
+        const etiquetaRetornoLlamada = this.code.getLabel();
+        
+        this.code.addi(reg.SP, reg.SP, -4*2);
+        node.args.forEach((arg) => {
+            arg.accept(this);
+        });
+        this.code.addi(reg.SP, reg.SP, 4*(node.args.length +2));
+        this.code.addi(reg.T1, reg.SP, -4);
+
+        this.code.la(reg.T0, etiquetaRetornoLlamada);
+        this.code.push(reg.T0);
+        this.code.push(reg.FP);
+        this.code.addi(reg.FP, reg.T1, 0);
+
+        const frameSize = this.functionMetada[nombreFuncion].frameSize;
+        this.code.addi(reg.SP, reg.SP, -(frameSize-2)*4);
+
+        this.code.j(nombreFuncion);
+        this.code.addLabel(etiquetaRetornoLlamada);
+
+        const returnSize = frameSize-1;
+        this.code.addi(reg.T0, reg.FP, -returnSize*4);
+        this.code.lw(reg.A0, reg.T0);
+
+        this.code.addi(reg.T0, reg.FP, -4);
+        this.code.lw(reg.FP, reg.T0);
+        this.code.addi(reg.SP, reg.SP, frameSize*4);
+        this.code.push(reg.A0);
+        this.code.pushObject({tipo: this.functionMetada[nombreFuncion].returnType, length: 4});
+    }
+
+    /**
+     * @type {BaseVisitor['visitReturn']}
+     */
+    visitReturn(node){
+        if(node.exp){
+            node.exp.accept(this);
+            this.code.popObject(reg.A0);
+
+            const frameSize = this.functionMetada[this.insideFunction].frameSize
+            const returnOffest = frameSize-1;
+            this.code.addi(reg.T0, reg.FP, -returnOffest*4)
+            this.code.sw(reg.A0, reg.T0)
+        }
+
+        this.code.j(this.returnLabel);
     }
 }

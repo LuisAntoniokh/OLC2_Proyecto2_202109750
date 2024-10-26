@@ -25,6 +25,7 @@ export class Generador {
     constructor() {
         this.instrucciones = []
         this.objectStack=[]
+        this.instrucionesDeFunciones = []
         this.depth = 0
         this._usedBuiltins = new Set()
         this._labelCounter = 0
@@ -441,10 +442,24 @@ export class Generador {
         this.instrucciones.push(new Instruction('slli', rd, rs1, shamt))
     }
 
+    printStringLiteral(string) {
+        const stringArray = stringTo1ByteArray(string);
+        stringArray.pop(); // No queremos el 0 al final
+
+        this.comment(`Imprimiendo literal ${string}`);
+
+        stringArray.forEach((charCode) => {
+            this.li(r.A0, charCode);
+            this.printChar();
+        });
+    }
+
     toString() {
         this.comment('Fin del programa')
         this.endProgram()
         this.comment('Builtins')
+        this.comment('Funciones foraneas')
+        this.instrucionesDeFunciones.forEach(instruccion => this.instrucciones.push(instruccion))
         Array.from(this._usedBuiltins).forEach(builtinName => {
             this.addLabel(builtinName)
             builtins[builtinName](this)
