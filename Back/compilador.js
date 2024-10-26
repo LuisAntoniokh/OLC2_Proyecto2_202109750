@@ -791,4 +791,48 @@ export class CompilerVisitor extends BaseVisitor {
 
         this.code.j(this.returnLabel);
     }
+
+    /**
+     * @type {BaseVisitor['visitEmbebidas']}
+     */
+    visitEmbebidas(node) {
+        switch (node.tipo) {
+            case 'parseInt(':
+                node.exp.accept(this);
+                this.code.popObject(reg.A0);
+                this.code.callBuiltin('parseInt');
+                this.code.pushObject({ tipo: 'int', length: 4 });
+                return;
+            case 'parseFloat(':
+                node.exp.accept(this);
+                this.code.popObject(reg.FA0);
+                this.code.callBuiltin('parseFloat');
+                this.code.pushObject({ tipo: 'float', length: 4 });
+                return;
+            case 'toString(':
+                node.exp.accept(this);
+                this.code.popObject(reg.A0);
+                this.code.callBuiltin('toString');
+                this.code.pushObject({ tipo: 'string', length: 4 });
+                return;
+            case 'toLowerCase(':
+                node.exp.accept(this);
+                this.code.popObject(reg.A0);
+                this.code.callBuiltin('toLowerCase');
+                this.code.pushObject({ tipo: 'string', length: 4 });
+                return;
+            case 'toUpperCase(':
+                node.exp.accept(this);
+                this.code.popObject(reg.A0);
+                this.code.callBuiltin('toUpperCase');
+                this.code.pushObject({ tipo: 'string', length: 4 });
+                return;
+            case 'typeof':
+                node.exp.accept(this);
+                this.code.popObject(reg.A0);
+                this.code.callBuiltin('typeOf');
+                this.code.pushObject({ tipo: 'string', length: 4 });
+                return;
+        }
+    }
 }

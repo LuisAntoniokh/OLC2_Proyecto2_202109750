@@ -449,7 +449,7 @@ export class Generador {
         this.comment(`Imprimiendo literal ${string}`);
 
         stringArray.forEach((charCode) => {
-            this.li(r.A0, charCode);
+            this.li(reg.A0, charCode);
             this.printChar();
         });
     }
