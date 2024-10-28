@@ -1,0 +1,153 @@
+Start = _ dcl:Sentencias* _
+
+Sentencias = vdlc:DeclarVar _
+            / fdlc:DeclarFunc _
+            / adlc:DeclarArr _ ";" _
+            / ndlc:StmtnDlc _
+
+DeclarVar = tipo:TipoDato _ id:Identificador _ "=" _ exp:Expresion _ ";"
+          / tipo:"var" _ id:Identificador _ "=" _ exp:Expresion _ ";"
+          / tipo:TipoDato _ id:Identificador _ exp:";"
+
+TipoDato = td:"int"
+        / td:"float"
+        / td:"string"
+        / td:"bool"
+        / td:"char"
+
+DeclarArr = tipo:TipoDato _ "[" _ "]" _ id:Identificador _ "=" _ "{" _ lista:ListaExp _ "}"
+  / tipo:TipoDato _ "[" _ "]" _ id:Identificador _ "=" _ "new" _ tipo2:TipoDato _ "[" _ tam:Expresion _ "]"
+  / tipo:TipoDato _ "[" _ "]" _ id:Identificador _ "=" _ id2:Identificador
+
+DeclarFunc = td:FuncTipoDato _ id:Identificador _ "(" _ params: Parametros? _ ")" _  block:Bloque
+
+Parametros = param:Parametro _ params:("," _ parame:Parametro)*
+
+Parametro = tipo:TipoDato _ id:Identificador
+
+FuncTipoDato = td:"int"
+        / td:"float"
+        / td:"string"
+        / td:"bool"
+        / td:"char"
+        / td:"void"
+
+StmtnDlc = "System.out.println(" _ exp:ListaExp _ ")" _ ";"
+    / block:Bloque
+    / stContr:StmtControl
+    / stCicle:StmtCiclos
+    / stTrans:StmtTransferencia
+    / exp:Expresion _ ";"
+
+ListaExp = exp:Expresion _ exps:("," _ expre:Expresion)*
+
+Bloque = "{" _ block:Sentencias* _ "}"
+
+StmtControl =  "if" _ "(" _ cond:Expresion _ ")" _ iftrue:StmtnDlc iffalse:(
+      _ "else" _ iffalse:StmtnDlc
+      )?
+    /  suich:Switch
+
+Switch = "switch" _ "(" _ exp:Expresion _ ")" _ "{" _ cases:Case* defo:Default? _ "}"
+
+Case = "case" _ exp:Expresion _ ":" _ stmts:Sentencias*
+
+Default = "default" _ ":" _ stmts:Sentencias*
+
+StmtCiclos = "while" _ "(" _ cond:Expresion _ ")" _ loop:StmtnDlc
+    / "for" _ "(" _ init:ForInit _  cond:Expresion _ ";" _ inc:Expresion _ ")" _ loop:StmtnDlc
+    / "for" _ "(" _ tipo:TipoDato _ id:Identificador _ ":" _ arr:Identificador _ ")" _ loop:StmtnDlc
+
+ForInit = dcl:DeclarVar
+        / exp:Expresion _ ";"
+
+StmtTransferencia = "break" _ ";"
+    / "continue" _ ";"
+    / "return" _ exp:Expresion? _ ";"
+
+TipoEmb = tem:"parseInt("
+      / tem:"parsefloat("
+      / tem:"toString("
+      / tem:"toLowerCase("
+      / tem:"toUpperCase("
+
+Expresion = FuncionArreglo
+            / ArrAsign:AsignacionArreglo
+            / ArrAcces:AccesoArreglo
+            / Asignacion
+
+FuncionArreglo = id:Identificador "." funcion:("indexOf(" _ argumento:Expresion _ ")"
+              / "join()"
+              / "length")
+
+Tercero = cond:OR _ "?" _ iftrue:Expresion _ ":" _ iffalse:Expresion
+
+Asignacion = tipo:"typeof" _ exp:Expresion
+            / id:Identificador _ "=" _ asgn:Asignacion
+            / id:Identificador _ "+=" _ asgn:Asignacion
+            / id:Identificador _ "-=" _ asgn:Asignacion
+            / tercer:Tercero
+            / OR
+
+AccesoArreglo = id:Identificador _ "[" _ indice:Expresion _ "]"
+
+AsignacionArreglo = id:Identificador _ "[" _ indice:Expresion _ "]" _ "=" _ valor:Expresion _
+
+OR = izq:AND expansion:(
+  _ op:( "||" ) _ der:AND
+)*
+
+AND = izq:Comparacion expansion:(
+  _ op:( "&&" ) _ der:Comparacion
+)*
+
+Comparacion = izq:Relacionales expansion:(
+  _ op:("!=" / "==") _ der:Relacionales
+)*
+
+Relacionales = izq:Adicion expansion:(
+  _ op:("<=" / "<" / ">=" / ">") _ der:Adicion
+)*
+
+Adicion = izq:Multiplicacion expansion:(
+  _ op:("+" / "-") _ der:Multiplicacion
+  )*
+
+Multiplicacion = izq:Unaria expansion:(
+  _ op:("*" / "/" / "%") _ der:Unaria
+)*
+
+Unaria = "-" _ num:Unaria
+      / "!" _ num:Unaria
+      / Llamada
+
+Llamada = callee:Primitivo _ params:("(" args:Argumentos? ")")*
+
+Argumentos = arg:Expresion _ args:("," _ exp:Expresion)*
+
+Identificador = [a-zA-Z_][a-zA-Z0-9_]*
+
+Primitivo = [0-9]+"."[0-9]+
+  / [0-9]+
+  / "true"
+  / "false"
+  / str:String
+  / "\'" [^'] "\'"
+  / "(" _ exp:Expresion _ ")"
+  / tipo:TipoEmb _ exp:Expresion _ ")"
+  / id:Identificador
+
+String
+  = "\"" chars:((EscapedChar / [^"\\])*) "\""
+
+EscapedChar
+  = "\\" ("n"
+          / "r"
+          / "t"
+          / "\""
+          / "\\")
+
+_ = ([ \t\n\r] / Comentarios)*
+
+Comentarios = "//" (![\n] .)*
+            / "/*" (!("*/") .)* "*/"
