@@ -440,6 +440,70 @@ export const parseFloat = (code) => {
 
 }
 
+/**
+ * @param {Generador} code
+ */
+export const toLowerCase = (code) => {
+    // A0 -> dirección en heap de la cadena
+    // result -> push en el stack la dirección en heap de la cadena convertida
+    code.push(reg.HP);
+    const end = code.getLabel();
+    const loop = code.addLabel();
+    code.lb(reg.T1, reg.A0);
+    code.beq(reg.T1, reg.ZERO, end);
+    
+    // Verificar si el carácter está en el rango de letras mayúsculas (A-Z)
+    code.li(reg.T2, 65); // ASCII de 'A'
+    code.li(reg.T3, 90); // ASCII de 'Z'
+    const notUpperCase = code.getLabel();
+    code.blt(reg.T1, reg.T2, notUpperCase);
+    code.bgt(reg.T1, reg.T3, notUpperCase);
+    
+    // Convertir a minúscula sumando 32
+    code.addi(reg.T1, reg.T1, 32);
+    
+    code.addLabel(notUpperCase);
+    code.sb(reg.T1, reg.HP);
+    code.addi(reg.HP, reg.HP, 1);
+    code.addi(reg.A0, reg.A0, 1);
+    code.j(loop);
+    code.addLabel(end);
+    code.sb(reg.ZERO, reg.HP);
+    code.addi(reg.HP, reg.HP, 1);
+}
+
+/**
+ * @param {Generador} code
+ */
+export const toUpperCase = (code) => {
+    // A0 -> dirección en heap de la cadena
+    // result -> push en el stack la dirección en heap de la cadena convertida
+    code.push(reg.HP);
+    const end = code.getLabel();
+    const loop = code.addLabel();
+    code.lb(reg.T1, reg.A0);
+    code.beq(reg.T1, reg.ZERO, end);
+    
+    // Verificar si el carácter está en el rango de letras minúsculas (a-z)
+    code.li(reg.T2, 97); // ASCII de 'a'
+    code.li(reg.T3, 122); // ASCII de 'z'
+    const notLowerCase = code.getLabel();
+    code.blt(reg.T1, reg.T2, notLowerCase);
+    code.bgt(reg.T1, reg.T3, notLowerCase);
+    
+    // Convertir a mayúscula restando 32
+    code.addi(reg.T1, reg.T1, -32);
+    
+    code.addLabel(notLowerCase);
+    code.sb(reg.T1, reg.HP);
+    code.addi(reg.HP, reg.HP, 1);
+    code.addi(reg.A0, reg.A0, 1);
+    code.j(loop);
+    code.addLabel(end);
+    code.sb(reg.ZERO, reg.HP);
+    code.addi(reg.HP, reg.HP, 1);
+}
+
 export const builtins = {
     concatString,
     lessOrEqual,
@@ -457,5 +521,7 @@ export const builtins = {
     lessFloat,
     higherFloat,
     parseInt,
-    parseFloat
+    parseFloat,
+    toLowerCase,
+    toUpperCase
 }
