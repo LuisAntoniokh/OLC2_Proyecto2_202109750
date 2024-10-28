@@ -93,8 +93,12 @@ System.out.println("1. parseInt");
 
 string numeroConvertible = "10";
 int numero10 = parseInt(numeroConvertible);
-System.out.println(numero10); // 10
 int numeroDecimal = parseInt("10.5123");
+
+string numeroNoConvertible = "Hola";
+parseInt(numeroNoConvertible); // ERROR EN TIEMPO DE EJECUCION: debe mostrar en consola el error de conversión
+
+System.out.println(numero10); // 10
 System.out.println(numeroDecimal); // 10
 System.out.println("");
 
@@ -102,12 +106,13 @@ System.out.println("2. parsefloat");
 
 System.out.println(parsefloat("10")); // 10.0
 System.out.println(parsefloat("10.5")); // 10.5
+parsefloat(numeroNoConvertible); // ERROR EN TIEMPO DE EJECUCION: debe mostrar en consola el error de conversión
+
 System.out.println("");
 
 System.out.println("3. toString");
 
 System.out.println(toString(10)); // "10"
-System.out.println(toString(10.5)+toString(10)); // "10.510"
 System.out.println("Fortran es el mejor lenguaje: " + toString(true)); // "Fortran es el mejor lenguaje: true"
 System.out.println("");
 
