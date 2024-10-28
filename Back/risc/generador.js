@@ -30,6 +30,7 @@ export class Generador {
         this._usedBuiltins = new Set()
         this._labelCounter = 0
         this.code = [];
+        this.uniqueIdCounter = 0;
     }
 
     add(rd, rs1, rs2) {
@@ -70,6 +71,10 @@ export class Generador {
 
     addi(rd, rs1, inm) {
         this.instrucciones.push(new Instruction('addi', rd, rs1, inm))
+    }
+
+    getUniqueId() {
+        return this.uniqueIdCounter++;
     }
 
     sw(rs1, rs2, inm = 0) {
@@ -276,6 +281,14 @@ export class Generador {
         return `L${this._labelCounter++}`
     }
 
+    getValue(reg) {
+       const inst = this.instrucciones.find(inst => inst.rd === reg)
+       if (inst) {
+           return inst.rs1
+       }
+       throw new Error(`Valor no encontrado`)
+    }
+
     addLabel(label) {
         label = label || this.getLabel()
         this.instrucciones.push(new Instruction(`${label}:`))
@@ -452,6 +465,10 @@ export class Generador {
             this.li(reg.A0, charCode);
             this.printChar();
         });
+    }
+
+    mv(rd, rs1) {
+        this.instrucciones.push(new Instruction('mv', rd, rs1))
     }
 
     toString() {

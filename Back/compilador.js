@@ -835,4 +835,80 @@ export class CompilerVisitor extends BaseVisitor {
                 return;
         }
     }
+
+    /**
+     * @type {BaseVisitor['visitFuncionArreglo']}
+     */
+    visitFuncionArreglo(node) {
+        const id = node.id;
+        const funcion = node.funcion;
+        const expresion = node.argumento;
+
+        switch(funcion){
+            case 'indexOf':
+                expresion.accept(this);
+                const expObject = this.code.popObject(reg.T0);
+                const [offset, variableObject] = this.code.getObject(id);
+                this.code.lw(reg.T1, reg.SP, offset); // Cargar la dirección base del arreglo
+
+                const uniqueId = this.code.getUniqueId(); // Obtener un ID único para las etiquetas
+                for (let i = 0; i < variableObject.length; i++) {
+                    this.code.lw(reg.T2, reg.T1, i * 4); // Cargar el valor del arreglo
+                    this.code.beq(reg.T2, reg.T0, `found_${uniqueId}_${i}`);
+                }
+                this.code.li(reg.T0, -1); // No encontrado
+                this.code.j(`end_indexOf_${uniqueId}`);
+
+                for (let i = 0; i < variableObject.length; i++) {
+                    this.code.addLabel(`found_${uniqueId}_${i}`);
+                    this.code.li(reg.T0, i); // Índice encontrado
+                    this.code.j(`end_indexOf_${uniqueId}`);
+                }
+
+                this.code.addLabel(`end_indexOf_${uniqueId}`);
+                this.code.push(reg.T0);
+                this.code.pushObject({ tipo: 'int', length: 1 });
+                break;
+
+            case 'length':
+                const [lenOffset, lenVariableObject] = this.code.getObject(node.id);
+                this.code.lw(reg.T1, reg.SP, lenOffset); // Cargar la dirección base del arreglo
+                this.code.li(reg.T0, lenVariableObject.length); // Longitud del arreglo
+                this.code.push(reg.T0);
+                this.code.pushObject({ tipo: 'int', length: 1 });
+                break;
+
+            case 'join':
+                const [joinOffset, joinVariableObject] = this.code.getObject(id);
+                this.code.lw(reg.T1, reg.SP, joinOffset); // Cargar la dirección base del arreglo
+    
+                for (let i = 0; i < joinVariableObject.length; i++) {
+                    this.code.lw(reg.T2, reg.T1, i * 4); // Cargar el valor del arreglo
+                    this.code.mv(reg.A0, reg.T2); // Mover el valor al registro A0 para imprimir
+                    this.code.li(reg.A7, 1); // Código de sistema para imprimir entero
+                    this.code.ecall(); // Llamada al sistema para imprimir
+    
+                    if (i < joinVariableObject.length - 1) {
+                        // Imprimir coma y espacio
+                        this.code.li(reg.A0, 44); // Código ASCII para ','
+                        this.code.li(reg.A7, 11); // Código de sistema para imprimir carácter
+                        this.code.ecall(); // Llamada al sistema para imprimir
+    
+                        this.code.li(reg.A0, 32); // Código ASCII para ' '
+                        this.code.li(reg.A7, 11); // Código de sistema para imprimir carácter
+                        this.code.ecall(); // Llamada al sistema para imprimir
+                    }
+
+                    if (i > 16){
+                        this.code.li(reg.T0, 0);
+                        this.code.li(reg.A0, 0);
+
+                    }
+                }
+                break;
+
+            default:
+                return;
+        }
+    }
 }
