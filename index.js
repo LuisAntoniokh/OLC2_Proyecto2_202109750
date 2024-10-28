@@ -3,18 +3,19 @@ import { CompilerVisitor } from './Back/compilador.js';
 
 let tabCount = 0;
 let openedTabs = {};
+let errCount = 0;
 
 const editor = document.getElementById('codigoFuente')
 const cons = document.getElementById('consolaOutput')
-// const tablaErrores = document.getElementById('tablaErrores');
-// const tablaSimbolos = document.getElementById('tablaSimbolos');
+const tablaErrores = document.getElementById('tablaErrores');
+const tablaSimbolos = document.getElementById('tablaSimbolos');
 
 document.getElementById('ejecutarBtn').addEventListener('click', analizador);
 document.getElementById('crearArchivoBtn').addEventListener('click', crearArchivo);
 document.getElementById('abrirArchivoBtn').addEventListener('click', abrirArchivo);
 document.getElementById('guardarArchivoBtn').addEventListener('click', guardarArchivo);
-//document.getElementById('reporteErroresBtn').addEventListener('click', mostrarErrores);
-//document.getElementById('reporteSimbolosBtn').addEventListener('click', mostrarSimbolos);
+document.getElementById('reporteErroresBtn').addEventListener('click', mostrarErrores);
+document.getElementById('reporteSimbolosBtn').addEventListener('click', mostrarSimbolos);
 
 function crearArchivo() {
     tabCount++;
@@ -97,9 +98,9 @@ function seleccionarTab(tab) {
 function analizador() {
     const codigoFuente = editor.value;
     consolaOutput.innerHTML = '';
-    // errCount = 0;
-    //tablaErrores.innerHTML = '';
-    //tablaSimbolos.innerHTML = '';
+    errCount = 0;
+    tablaErrores.innerHTML = '';
+    tablaSimbolos.innerHTML = '';
     try {
         const arbol = parse(codigoFuente);
         console.log("AST generado:", JSON.stringify(arbol, null, 2))
@@ -107,8 +108,8 @@ function analizador() {
         console.log({arbol})
         arbol.forEach(tree => tree.accept(compilador))
         cons.innerHTML = compilador.code.toString();
-        //llenarTablaSimbolos(interprete.symbolTable.getSymbols());
-        //llenarTablaErrores(interprete.errs.getErrores());
+        llenarTablaSimbolos(compilador.symbolTable);
+        llenarTablaErrores(compilador.errors);
     } catch (error) {
         console.error(error);
         //errs.addError(error.message, error.location.start.line, error.location.start.column, 'Sintáctico');
