@@ -185,9 +185,16 @@ export class CompilerVisitor extends BaseVisitor {
                 break;
 
             case '/':
+                const zeroLabel = this.code.getLabel();
+                const endLabel = this.code.getLabel();
+                this.code.beq(reg.T0, reg.ZERO, zeroLabel);
                 this.code.div(reg.T0, reg.T1, reg.T0);
                 this.code.push(reg.T0);
-                break;
+                this.code.j(endLabel);
+                this.code.addLabel(zeroLabel);
+                this.code.pushConstant({ valor: "null", tipo: "null" });
+                this.code.addLabel(endLabel);
+                return;
             
             case '%':
                 this.code.mod(reg.T0, reg.T1, reg.T0);
