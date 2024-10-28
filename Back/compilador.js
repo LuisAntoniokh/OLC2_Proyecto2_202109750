@@ -818,9 +818,20 @@ export class CompilerVisitor extends BaseVisitor {
                 return;
             case 'toString(':
                 node.exp.accept(this);
-                this.code.popObject(reg.A0);
-                this.code.callBuiltin('toString');
-                this.code.pushObject({ tipo: 'string', length: 4 });
+                const valueObject = this.code.popObject(reg.A0);
+                if (valueObject.tipo === 'boolean') {
+                    const trueLabel = this.code.getLabel();
+                    const endLabel = this.code.getLabel();
+                    this.code.bne(reg.A0, reg.ZERO, trueLabel);
+                    this.code.pushConstant({ valor: "false", tipo: "string" });
+                    this.code.j(endLabel);
+                    this.code.addLabel(trueLabel);
+                    this.code.pushConstant({ valor: "true", tipo: "string" });
+                    this.code.addLabel(endLabel);
+                } else {
+                    this.code.callBuiltin('toString');
+                    this.code.pushObject({ tipo: 'string', length: 4 });
+                }
                 return;
             case 'toLowerCase(':
                 node.exp.accept(this);
@@ -836,9 +847,29 @@ export class CompilerVisitor extends BaseVisitor {
                 return;
             case 'typeof':
                 node.exp.accept(this);
-                this.code.popObject(reg.A0);
-                this.code.callBuiltin('typeOf');
-                this.code.pushObject({ tipo: 'string', length: 4 });
+                const isFloat = this.code.getTopObject().tipo === 'float';
+                const nodito = this.code.popObject(isFloat ? flt.FT0 : reg.T0); // der
+                let typeString;
+                switch (nodito.tipo) {
+                    case 'int':
+                        typeString = "int";
+                        break;
+                    case 'float':
+                        typeString = "float";
+                        break;
+                    case 'string':
+                        typeString = "string";
+                        break;
+                    case 'char':
+                        typeString = "char";
+                        break;
+                    case 'boolean':
+                        typeString = "boolean";
+                        break;
+                    default:
+                        typeString = "unknown";
+                }
+                this.code.pushConstant({ valor: typeString, tipo: "string" });
                 return;
         }
     }
