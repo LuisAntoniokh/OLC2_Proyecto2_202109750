@@ -818,20 +818,20 @@ export class CompilerVisitor extends BaseVisitor {
                 return;
             case 'toString(':
                 node.exp.accept(this);
-                const valueObject = this.code.popObject(reg.A0);
-                if (valueObject.tipo === 'boolean') {
-                    const trueLabel = this.code.getLabel();
-                    const endLabel = this.code.getLabel();
-                    this.code.bne(reg.A0, reg.ZERO, trueLabel);
-                    this.code.pushConstant({ valor: "false", tipo: "string" });
-                    this.code.j(endLabel);
-                    this.code.addLabel(trueLabel);
-                    this.code.pushConstant({ valor: "true", tipo: "string" });
-                    this.code.addLabel(endLabel);
-                } else {
-                    this.code.callBuiltin('toString');
-                    this.code.pushObject({ tipo: 'string', length: 4 });
+                const esFloat = this.code.getTopObject().tipo === 'float';
+                const node40 = this.code.popObject(esFloat ? flt.FT0 : reg.T0);
+                switch (node40.tipo) {
+                    case 'int':
+                        this.code.callBuiltin('intToString');
+                        break;
+                    case 'boolean':
+                        this.code.callBuiltin('booleanToString');
+                        break;
+                    default:
+                        throw new Error(`Unsupported type for toString: ${inputObject.tipo}`);
                 }
+            
+                this.code.pushObject({ tipo: 'string', length: 4 });
                 return;
             case 'toLowerCase(':
                 node.exp.accept(this);
@@ -921,22 +921,19 @@ export class CompilerVisitor extends BaseVisitor {
                 this.code.lw(reg.T1, reg.SP, joinOffset); // Cargar la dirección base del arreglo
     
                 for (let i = 0; i < joinVariableObject.length; i++) {
-                    this.code.lw(reg.T2, reg.T1, i * 4); // Cargar el valor del arreglo
-                    this.code.mv(reg.A0, reg.T2); // Mover el valor al registro A0 para imprimir
-                    this.code.li(reg.A7, 1); // Código de sistema para imprimir entero
-                    this.code.ecall(); // Llamada al sistema para imprimir
+                    this.code.lw(reg.T2, reg.T1, i * 4);
+                    this.code.mv(reg.A0, reg.T2);
+                    this.code.li(reg.A7, 1); 
+                    this.code.ecall(); 
     
                     if (i < joinVariableObject.length - 1) {
-                        // Imprimir coma y espacio
-                        this.code.li(reg.A0, 44); // Código ASCII para ','
-                        this.code.li(reg.A7, 11); // Código de sistema para imprimir carácter
-                        this.code.ecall(); // Llamada al sistema para imprimir
-    
-                        this.code.li(reg.A0, 32); // Código ASCII para ' '
-                        this.code.li(reg.A7, 11); // Código de sistema para imprimir carácter
-                        this.code.ecall(); // Llamada al sistema para imprimir
+                        this.code.li(reg.A0, 44); 
+                        this.code.li(reg.A7, 11); 
+                        this.code.ecall(); 
+                        this.code.li(reg.A0, 32);
+                        this.code.li(reg.A7, 11);
+                        this.code.ecall(); 
                     }
-
                     if (i > 16){
                         this.code.li(reg.T0, 0);
                         this.code.li(reg.A0, 0);

@@ -471,6 +471,14 @@ export class Generador {
         this.instrucciones.push(new Instruction('mv', rd, rs1))
     }
 
+    bltz(rs1, label) {
+        this.instrucciones.push(new Instruction('bltz', rs1, label))
+    }
+
+    neg(rd, rs1) {
+        this.instrucciones.push(new Instruction('neg', rd, rs1))
+    }
+
     toString() {
         this.comment('Fin del programa')
         this.endProgram()

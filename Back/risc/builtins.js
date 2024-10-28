@@ -444,15 +444,11 @@ export const parseFloat = (code) => {
  * @param {Generador} code
  */
 export const toLowerCase = (code) => {
-    // A0 -> dirección en heap de la cadena
-    // result -> push en el stack la dirección en heap de la cadena convertida
     code.push(reg.HP);
     const end = code.getLabel();
     const loop = code.addLabel();
     code.lb(reg.T1, reg.A0);
     code.beq(reg.T1, reg.ZERO, end);
-    
-    // Verificar si el carácter está en el rango de letras mayúsculas (A-Z)
     code.li(reg.T2, 65); // ASCII de 'A'
     code.li(reg.T3, 90); // ASCII de 'Z'
     const notUpperCase = code.getLabel();
@@ -461,7 +457,6 @@ export const toLowerCase = (code) => {
     
     // Convertir a minúscula sumando 32
     code.addi(reg.T1, reg.T1, 32);
-    
     code.addLabel(notUpperCase);
     code.sb(reg.T1, reg.HP);
     code.addi(reg.HP, reg.HP, 1);
@@ -476,15 +471,11 @@ export const toLowerCase = (code) => {
  * @param {Generador} code
  */
 export const toUpperCase = (code) => {
-    // A0 -> dirección en heap de la cadena
-    // result -> push en el stack la dirección en heap de la cadena convertida
     code.push(reg.HP);
     const end = code.getLabel();
     const loop = code.addLabel();
     code.lb(reg.T1, reg.A0);
     code.beq(reg.T1, reg.ZERO, end);
-    
-    // Verificar si el carácter está en el rango de letras minúsculas (a-z)
     code.li(reg.T2, 97); // ASCII de 'a'
     code.li(reg.T3, 122); // ASCII de 'z'
     const notLowerCase = code.getLabel();
@@ -493,7 +484,6 @@ export const toUpperCase = (code) => {
     
     // Convertir a mayúscula restando 32
     code.addi(reg.T1, reg.T1, -32);
-    
     code.addLabel(notLowerCase);
     code.sb(reg.T1, reg.HP);
     code.addi(reg.HP, reg.HP, 1);
@@ -503,6 +493,81 @@ export const toUpperCase = (code) => {
     code.sb(reg.ZERO, reg.HP);
     code.addi(reg.HP, reg.HP, 1);
 }
+
+/**
+ * @param {Generador} code
+ */
+export const intToString = (code) => {
+    code.push(reg.HP);
+    const loop = code.getLabel();
+    const end = code.getLabel();
+    const negative = code.getLabel();
+    code.li(reg.T1, 10);
+    code.li(reg.T2, 0);
+    code.bltz(reg.T0, negative);
+    code.addLabel(loop);
+    code.mod(reg.T3, reg.T0, reg.T1); 
+    code.addi(reg.T3, reg.T3, 48);
+    code.sb(reg.T3, reg.HP);
+    code.addi(reg.HP, reg.HP, 1);
+    code.div(reg.T0, reg.T0, reg.T1);
+    code.beqz(reg.T0, end);
+    code.j(loop);
+    code.addLabel(negative);
+    code.li(reg.T3, 45);
+    code.sb(reg.T3, reg.HP);
+    code.addi(reg.HP, reg.HP, 1);
+    code.neg(reg.T0, reg.T0);
+    code.j(loop);
+    code.addLabel(end);
+    code.sb(reg.ZERO, reg.HP); 
+    code.addi(reg.HP, reg.HP, 1);
+};
+
+/**
+ * @param {Generador} code
+ */
+export const booleanToString = (code) => {
+    code.push(reg.HP);
+    const trueLabel = code.getLabel();
+    const end = code.getLabel();
+
+    code.bnez(reg.T0, trueLabel);
+    code.li(reg.T1, 102); // 'f'
+    code.sb(reg.T1, reg.HP);
+    code.addi(reg.HP, reg.HP, 1);
+    code.li(reg.T1, 97); // 'a'
+    code.sb(reg.T1, reg.HP);
+    code.addi(reg.HP, reg.HP, 1);
+    code.li(reg.T1, 108); // 'l'
+    code.sb(reg.T1, reg.HP);
+    code.addi(reg.HP, reg.HP, 1);
+    code.li(reg.T1, 115); // 's'
+    code.sb(reg.T1, reg.HP);
+    code.addi(reg.HP, reg.HP, 1);
+    code.li(reg.T1, 101); // 'e'
+    code.sb(reg.T1, reg.HP);
+    code.addi(reg.HP, reg.HP, 1);
+    code.j(end);
+
+    code.addLabel(trueLabel);
+    code.li(reg.T1, 116); // 't'
+    code.sb(reg.T1, reg.HP);
+    code.addi(reg.HP, reg.HP, 1);
+    code.li(reg.T1, 114); // 'r'
+    code.sb(reg.T1, reg.HP);
+    code.addi(reg.HP, reg.HP, 1);
+    code.li(reg.T1, 117); // 'u'
+    code.sb(reg.T1, reg.HP);
+    code.addi(reg.HP, reg.HP, 1);
+    code.li(reg.T1, 101); // 'e'
+    code.sb(reg.T1, reg.HP);
+    code.addi(reg.HP, reg.HP, 1);
+
+    code.addLabel(end);
+    code.sb(reg.ZERO, reg.HP);
+    code.addi(reg.HP, reg.HP, 1);
+};
 
 export const builtins = {
     concatString,
@@ -523,5 +588,7 @@ export const builtins = {
     parseInt,
     parseFloat,
     toLowerCase,
-    toUpperCase
+    toUpperCase,
+    intToString,
+    booleanToString
 }
